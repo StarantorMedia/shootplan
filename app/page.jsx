@@ -13,11 +13,7 @@ async function notify(type, to, data) {
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${_token || SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, to, data }),
     });
   } catch (e) {
