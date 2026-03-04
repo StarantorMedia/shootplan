@@ -111,9 +111,17 @@ const THEMES = {
     shadow:"0 1px 2px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08)",
   }
 };
+// Use a proxy-like object so S can reference C properties dynamically
+// even before C values are set (avoids TDZ in production bundles)
+const _themeDefaults = THEMES.dark;
+// eslint-disable-next-line prefer-const
 let _themeMode = "dark";
-try { _themeMode = localStorage.getItem("sp_theme") || "dark"; } catch(e) {}
-let C = { ...THEMES[_themeMode] };
+// SSR-safe localStorage read
+if (typeof window !== "undefined") {
+  try { const saved = localStorage.getItem("sp_theme"); if (saved) _themeMode = saved; } catch(e) {}
+}
+// C is a plain object — reassigned on theme change via Object.assign
+const C = Object.assign({}, THEMES[_themeMode]);
 function getC() { return C; }
 
 const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
@@ -328,9 +336,9 @@ function Layout({ page, setPage, user, onLogout, children }) {
   const [theme, setTheme] = useState(_themeMode);
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
-    C = { ...THEMES[next] };
     _themeMode = next;
-    try { localStorage.setItem('sp_theme', next); } catch(e) {}
+    Object.assign(C, THEMES[next]);
+    if (typeof window !== 'undefined') { try { localStorage.setItem('sp_theme', next); } catch(e) {} }
     setTheme(next);
   };
   const width = useWindowSize();
