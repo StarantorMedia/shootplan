@@ -423,7 +423,6 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
           const sp = participants.filter(p => p.shoot_id === shoot.id);
           const myP = sp.find(p => p.user_id === user.id);
           const sc = STATUS_CONFIG[shoot.status] || STATUS_CONFIG.planned;
-  const canEditShoot = user.is_admin || shoot.created_by === user.id;
           return (
             <div key={shoot.id} style={{ ...S.cardHover, display: "flex", alignItems: "center", gap: 12 }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
               <div style={{ width: 4, height: 44, borderRadius: 2, background: sc.color, flexShrink: 0 }} />
@@ -595,6 +594,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
   const sched = [...schedule.filter(s => s.shoot_id === shoot.id)].sort((a,b) => (a.time||"").localeCompare(b.time||""));
   const myP = sp.find(p => p.user_id === user.id);
   const sc = STATUS_CONFIG[shoot.status] || STATUS_CONFIG.planned;
+  const canEditShoot = user.is_admin || shoot.created_by === user.id;
   const shootClient = clients.find(c => c.id === shoot.client_id);
   const links = (() => { try { return JSON.parse(shoot.shared_links || "[]"); } catch { return []; } })();
 
@@ -1568,7 +1568,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
   const handleInvite = async (networkId, userId) => {
     if (allMembers.find(m => m.network_id === networkId && m.user_id === userId)) { alert("Bereits Mitglied"); return; }
     try {
-      const mem = await db.insert("network_members", { network_id: networkId, user_id: userId, role: "member", status: "active" });
+      const mem = await db.insert("network_members", { network_id: networkId, user_id: userId, role: "member", status: "pending" });
       setAllMembers(p => [...p, mem]);
       // Notify invited user
       const invitedUser = users.find(u => u.id === userId);
@@ -2354,8 +2354,8 @@ export default function App() {
     if (!user) return;
     setLoading(true);
     try {
-      const [u, s, p, sl, sc, cl, ue] = await Promise.all([db.select("users"), db.select("shoots"), db.select("shoot_participants"), db.select("shotlist"), db.select("schedule"), db.select("clients"), db.select("user_equipment", `user_id=eq.${user.id}`)]);
-      setUsers(u); setShoots(s); setParticipants(p); setShotlist(sl); setSchedule(sc); setClients(cl); setUserEquipment(ue);
+      const [u, s, p, sl, schedData, cl, ue] = await Promise.all([db.select("users"), db.select("shoots"), db.select("shoot_participants"), db.select("shotlist"), db.select("schedule"), db.select("clients"), db.select("user_equipment", `user_id=eq.${user.id}`)]);
+      setUsers(u); setShoots(s); setParticipants(p); setShotlist(sl); setSchedule(schedData); setClients(cl); setUserEquipment(ue);
       // Note: network data loads lazily in NetworkPage
     } catch (e) { console.error(e); }
     setLoading(false);
