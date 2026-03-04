@@ -113,6 +113,17 @@ function templates(type: string, data: Record<string, string>) {
         `),
       };
 
+    case "new_shoot_published":
+      return {
+        subject: `🎬 Neuer Shoot: ${data.shoot_title}`,
+        html: baseTemplate(`
+          <h2>Neuer Shoot ausgeschrieben</h2>
+          <p><span class="hi">${data.publisher_name}</span> hat einen neuen Shoot im Netzwerk <span class="tag">${data.network_name}</span> veröffentlicht:</p>
+          <p><span class="tag">${data.shoot_title}</span></p>
+          ${data.shoot_date ? `<p>📅 <span class="hi">${data.shoot_date}</span></p>` : ""}
+          <p>Öffne die App um die Details zu sehen und dich zu bewerben.</p>
+        `),
+      };
     default:
       throw new Error("Unknown notification type: " + type);
   }

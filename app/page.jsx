@@ -51,7 +51,7 @@ const db = {
 };
 
 const STATUS_CONFIG = {
-  planned:   { label: "Geplant",   color: "#F59E0B", bg: "rgba(245,158,11,0.12)",  dot: "#F59E0B" },
+  planned:   { label: "Geplant",   color: C.amber, bg: "rgba(245,158,11,0.12)",  dot: C.amber },
   confirmed: { label: "Bestätigt", color: "#10B981", bg: "rgba(16,185,129,0.12)", dot: "#10B981" },
   cancelled: { label: "Abgesagt",  color: "#EF4444", bg: "rgba(239,68,68,0.12)",  dot: "#EF4444" },
 };
@@ -61,10 +61,10 @@ const ATTEND_CONFIG = {
   sick:      { label: "Krank",     color: "#EF4444", bg: "rgba(239,68,68,0.15)" },
   absent:    { label: "Abwesend",  color: "#8B5CF6", bg: "rgba(139,92,246,0.15)" },
 };
-const SHOT_STATUS = { open: { label: "Offen", color: "#6B7280" }, in_progress: { label: "In Arbeit", color: "#F59E0B" }, done: { label: "Erledigt", color: "#10B981" } };
+const SHOT_STATUS = { open: { label: "Offen", color: "#6B7280" }, in_progress: { label: "In Arbeit", color: C.amber }, done: { label: "Erledigt", color: "#10B981" } };
 const ROLE_CONFIG = {
-  admin:  { label: "Admin",        color: "#F59E0B" },
-  crew:   { label: "Crew",         color: "#6366F1" },
+  admin:  { label: "Admin",        color: C.amber },
+  crew:   { label: "Crew",         color: C.accent },
   actor:  { label: "Schauspieler", color: "#10B981" },
 };
 const GENRES = ["Action","Comedy","Drama","Horror","Romance","Thriller","Documentary","Commercial","Music Video","Other"];
@@ -88,112 +88,124 @@ function exportToICS(shoots) {
 // Inspired by: Linear, Vercel, Figma — precise, structured, no decoration for its own sake
 // ============================================================
 
-// Color tokens
-const C = {
-  bg:        "#0D0D0D",   // near-black background
-  surface:   "#141414",   // cards, sidebar
-  surfaceHi: "#1A1A1A",   // elevated surfaces, hover
-  border:    "#242424",   // default border
-  borderHi:  "#333333",   // emphasized border
-  accent:    "#E8FF47",   // electric lime — primary action, active states
-  accentDim: "rgba(232,255,71,0.08)",
-  text:      "#F0F0F0",   // primary text
-  textMid:   "#8A8A8A",   // secondary text
-  textDim:   "#4A4A4A",   // tertiary / labels
-  danger:    "#FF4444",
-  dangerDim: "rgba(255,68,68,0.1)",
-  green:     "#22C55E",
-  greenDim:  "rgba(34,197,94,0.12)",
-  amber:     "#F59E0B",
-  amberDim:  "rgba(245,158,11,0.12)",
-  purple:    "#A78BFA",
-  purpleDim: "rgba(167,139,250,0.12)",
+// ── Apple-style Design System with Dark/Light mode ──────────
+const THEMES = {
+  dark: {
+    bg:"#000000", surface:"#1C1C1E", surfaceHi:"#2C2C2E", border:"#38383A", borderHi:"#48484A",
+    accent:"#0A84FF", accentDim:"rgba(10,132,255,0.12)",
+    text:"#FFFFFF", textMid:"rgba(235,235,245,0.8)", textDim:"rgba(235,235,245,0.45)",
+    danger:"#FF453A", dangerDim:"rgba(255,69,58,0.15)",
+    green:"#30D158", greenDim:"rgba(48,209,88,0.15)",
+    amber:"#FF9F0A", amberDim:"rgba(255,159,10,0.15)",
+    purple:"#BF5AF2", purpleDim:"rgba(191,90,242,0.15)",
+    shadow:"0 1px 3px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.25)",
+  },
+  light: {
+    bg:"#F2F2F7", surface:"#FFFFFF", surfaceHi:"#F2F2F7", border:"#E5E5EA", borderHi:"#C7C7CC",
+    accent:"#007AFF", accentDim:"rgba(0,122,255,0.10)",
+    text:"#000000", textMid:"rgba(60,60,67,0.6)", textDim:"rgba(60,60,67,0.35)",
+    danger:"#FF3B30", dangerDim:"rgba(255,59,48,0.12)",
+    green:"#34C759", greenDim:"rgba(52,199,89,0.12)",
+    amber:"#FF9500", amberDim:"rgba(255,149,0,0.12)",
+    purple:"#AF52DE", purpleDim:"rgba(175,82,222,0.12)",
+    shadow:"0 1px 2px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.08)",
+  }
 };
+let _themeMode = "dark";
+try { _themeMode = localStorage.getItem("sp_theme") || "dark"; } catch(e) {}
+let C = { ...THEMES[_themeMode] };
+function getC() { return C; }
 
 const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
 
+// Helper: re-evaluates styles with current C (needed after theme switch)
+const mk = (fn) => fn();
+
 const S = {
-  root: { fontFamily: "'IBM Plex Mono','Fira Code','Courier New',monospace", background: C.bg, color: C.text, minHeight: "100vh" },
+  root: { fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", transition: "background 0.25s,color 0.25s" },
 
-  // Sidebar — structured, utilitarian
-  sidebar: (open) => ({ width: 220, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto", transform: open ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.2s ease" }),
-  sidebarDesktop: { width: 220, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 150 },
+  // ── Sidebar ─────────────────────────────────────────────────
+  sidebar: (open) => ({ width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto", transform: open ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)" }),
+  sidebarDesktop: { width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto" },
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 150, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" },
 
-  logo: { padding: "20px 16px 16px", borderBottom: `1px solid ${C.border}` },
+  logo: { padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}` },
   logoMark: { display: "flex", alignItems: "center", gap: 10 },
-  logoIcon: { width: 28, height: 28, background: C.accent, borderRadius: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 },
-  logoText: { fontSize: 13, fontWeight: 700, letterSpacing: "0.05em", color: C.text, textTransform: "uppercase" },
-  logoSub: { fontSize: 9, color: C.textDim, letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 2 },
-
-  nav: { padding: "8px", flex: 1, display: "flex", flexDirection: "column", gap: 1 },
-  navSection: { fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", padding: "16px 8px 6px" },
-  navItem: (a) => ({ display: "flex", alignItems: "center", gap: 9, padding: "7px 10px", borderRadius: 3, cursor: "pointer", background: a ? C.accentDim : "transparent", color: a ? C.accent : C.textMid, fontSize: 12, fontWeight: a ? 600 : 400, borderLeft: a ? `2px solid ${C.accent}` : "2px solid transparent", transition: "all 0.1s", letterSpacing: "0.02em" }),
-  navIcon: { fontSize: 13, width: 18, textAlign: "center", flexShrink: 0 },
-
+  logoIcon: { width: 30, height: 30, background: C.accent, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 },
+  logoText: { fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", color: C.text },
+  logoSub:  { fontSize: 10, color: C.textDim, marginTop: 1 },
+  nav: { padding: "8px 10px", flex: 1, display: "flex", flexDirection: "column", gap: 2 },
+  navSection: { fontSize: 10, fontWeight: 600, color: C.textDim, letterSpacing: "0.05em", textTransform: "uppercase", padding: "14px 8px 4px" },
+  navItem: (a) => ({ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 8, cursor: "pointer", background: a ? C.accentDim : "transparent", color: a ? C.accent : C.textMid, fontSize: 13, fontWeight: a ? 600 : 400, transition: "background 0.12s", border: "none", width: "100%", textAlign: "left", fontFamily: "inherit" }),
+  navIcon: { fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 },
   sidebarUser: { padding: "12px 16px", borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 },
-  avatar: (sz = 32) => ({ width: sz, height: sz, borderRadius: 2, background: C.accentDim, border: `1px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.max(sz * 0.35, 10), fontWeight: 700, color: C.accent, flexShrink: 0, fontFamily: "'IBM Plex Mono',monospace" }),
+  avatar: (sz = 32) => ({ width: sz, height: sz, borderRadius: "50%", background: C.accentDim, border: `2px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.max(sz * 0.38, 10), fontWeight: 700, color: C.accent, flexShrink: 0 }),
 
-  topbar: { display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 100 },
-  main: { flex: 1, padding: "24px 16px", maxWidth: "100%", boxSizing: "border-box" },
-  mainDesktop: { marginLeft: 220, flex: 1, padding: "36px 40px", maxWidth: "calc(100vw - 220px)", boxSizing: "border-box" },
+  topbar: { display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 100 },
+  main: { flex: 1, padding: "20px 16px", maxWidth: "100%", boxSizing: "border-box" },
+  mainDesktop: { marginLeft: 240, flex: 1, padding: "32px 36px", maxWidth: "calc(100vw - 240px)", boxSizing: "border-box" },
 
-  pageHeader: { marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12, paddingBottom: 20, borderBottom: `1px solid ${C.border}` },
-  pageTitle: { fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", color: C.text, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" },
-  pageSub: { fontSize: 11, color: C.textDim, fontFamily: "'IBM Plex Mono',monospace", letterSpacing: "0.05em" },
+  // ── Page layout ─────────────────────────────────────────────
+  pageHeader: { marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 },
+  pageTitle:  { fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 },
+  pageSub:    { fontSize: 12, color: C.textDim },
 
+  // ── Buttons ─────────────────────────────────────────────────
   btn: (v = "primary") => ({
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: v === "ghost" ? "6px 12px" : "8px 16px",
-    borderRadius: 2,
-    border: v === "outline" ? `1px solid ${C.border}` : v === "primary" ? "none" : v === "danger" ? `1px solid ${C.danger}33` : `1px solid ${C.border}`,
-    background: v === "primary" ? C.accent : v === "danger" ? C.dangerDim : v === "outline" ? "transparent" : C.surfaceHi,
-    color: v === "primary" ? "#000" : v === "danger" ? C.danger : v === "outline" ? C.textMid : C.textMid,
-    fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0,
-    letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace",
+    padding: "9px 16px", borderRadius: 10,
+    background: v === "primary" ? C.accent : v === "danger" ? C.dangerDim : v === "outline" ? "transparent" : v === "ghost" ? "transparent" : C.surfaceHi,
+    color:      v === "primary" ? "#fff"   : v === "danger" ? C.danger   : C.textMid,
+    border:     v === "outline" ? `1px solid ${C.border}` : v === "danger" ? `1px solid ${C.danger}44` : "1px solid transparent",
+    fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit",
+    boxShadow: v === "primary" ? `0 1px 3px ${C.accent}55` : "none",
   }),
 
-  card: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 3, padding: "16px" },
-  cardHover: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 3, padding: "16px", cursor: "pointer", transition: "border-color 0.1s, background 0.1s" },
+  // ── Cards ────────────────────────────────────────────────────
+  card:     { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow },
+  cardHover:{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", cursor: "pointer", transition: "background 0.12s", boxShadow: C.shadow },
+  statCard: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow },
+  statValue:{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text },
+  statLabel:{ fontSize: 11, color: C.textDim, marginTop: 4 },
 
-  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 },
-  grid3: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 },
+  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 },
+  grid3: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10 },
 
-  statCard: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 3, padding: "20px 24px", position: "relative", overflow: "hidden" },
-  statValue: { fontSize: 32, fontWeight: 700, letterSpacing: "-0.03em", color: C.text, fontFamily: "'IBM Plex Mono',monospace" },
-  statLabel: { fontSize: 10, color: C.textDim, marginTop: 4, letterSpacing: "0.12em", textTransform: "uppercase" },
-
+  // ── Badges ───────────────────────────────────────────────────
   badge: (s) => {
-    const map = { planned: { color: C.amber, bg: C.amberDim }, confirmed: { color: C.green, bg: C.greenDim }, cancelled: { color: C.textMid, bg: C.surfaceHi } };
-    const c = map[s] || { color: C.textMid, bg: C.surfaceHi };
-    return { display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, color: c.color, background: c.bg, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" };
+    const map = { planned:{color:C.amber,bg:C.amberDim}, confirmed:{color:C.green,bg:C.greenDim}, cancelled:{color:C.textMid,bg:C.surfaceHi} };
+    const t = map[s] || map.cancelled;
+    return { display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:20, fontSize:11, fontWeight:600, color:t.color, background:t.bg };
   },
   attendBadge: (s) => {
-    const map = { confirmed: { color: C.green, bg: C.greenDim }, open: { color: C.textMid, bg: C.surfaceHi }, sick: { color: C.danger, bg: C.dangerDim }, absent: { color: C.purple, bg: C.purpleDim } };
-    const c = map[s] || map.open;
-    return { display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, color: c.color, background: c.bg, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" };
+    const map = { confirmed:{color:C.green,bg:C.greenDim}, open:{color:C.textMid,bg:C.surfaceHi}, sick:{color:C.danger,bg:C.dangerDim}, absent:{color:C.purple,bg:C.purpleDim} };
+    const t = map[s] || map.open;
+    return { display:"inline-flex", alignItems:"center", padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:600, color:t.color, background:t.bg };
   },
   roleBadge: (r) => {
-    const map = { admin: { color: C.accent, bg: C.accentDim }, crew: { color: C.purple, bg: C.purpleDim }, actor: { color: C.green, bg: C.greenDim } };
-    const c = map[r] || map.crew;
-    return { display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 2, fontSize: 10, fontWeight: 700, color: c.color, background: c.bg, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" };
+    const map = { admin:{color:C.accent,bg:C.accentDim}, crew:{color:C.purple,bg:C.purpleDim}, actor:{color:C.green,bg:C.greenDim} };
+    const t = map[r] || map.crew;
+    return { display:"inline-flex", alignItems:"center", padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:600, color:t.color, background:t.bg };
   },
 
-  input: { background: C.bg, border: `1px solid ${C.border}`, borderRadius: 2, padding: "9px 12px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "'IBM Plex Mono',monospace" },
-  textarea: { background: C.bg, border: `1px solid ${C.border}`, borderRadius: 2, padding: "9px 12px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "'IBM Plex Mono',monospace" },
-  select: { background: C.bg, border: `1px solid ${C.border}`, borderRadius: 2, padding: "9px 12px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "'IBM Plex Mono',monospace" },
-  label: { fontSize: 9, fontWeight: 700, color: C.textDim, marginBottom: 6, display: "block", letterSpacing: "0.15em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" },
+  // ── Forms ────────────────────────────────────────────────────
+  input:    { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" },
+  textarea: { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" },
+  select:   { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" },
+  label:    { fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" },
 
-  modal: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 1000, padding: 0 },
-  modalBox: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: "4px 4px 0 0", borderTop: `2px solid ${C.accent}`, padding: "24px 20px", width: "100%", maxWidth: 580, maxHeight: "90vh", overflowY: "auto" },
-  modalTitle: { fontSize: 14, fontWeight: 700, marginBottom: 20, textTransform: "uppercase", letterSpacing: "0.08em" },
+  // ── Modals ───────────────────────────────────────────────────
+  modal:     { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" },
+  modalBox:  { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" },
+  modalTitle:{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text },
 
-  tag: (color = C.accent) => ({ display: "inline-block", padding: "2px 7px", borderRadius: 2, fontSize: 10, fontWeight: 700, color, background: color + "18", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" }),
-  toggle: (a) => ({ padding: "6px 14px", borderRadius: 2, border: "none", background: a ? C.surfaceHi : "transparent", color: a ? C.text : C.textDim, fontSize: 11, fontWeight: a ? 700 : 400, cursor: "pointer", letterSpacing: "0.04em", fontFamily: "'IBM Plex Mono',monospace" }),
-  err: { fontSize: 11, color: C.danger, padding: "10px 12px", background: C.dangerDim, borderRadius: 2, marginBottom: 12, borderLeft: `2px solid ${C.danger}`, fontFamily: "'IBM Plex Mono',monospace" },
-  driveBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 2, border: `1px solid ${C.border}`, background: C.surfaceHi, color: C.textMid, fontSize: 11, fontWeight: 700, cursor: "pointer", textDecoration: "none", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" },
-  divider: { height: 1, background: C.border, margin: "16px 0" },
-  hamburger: { background: "none", border: "none", color: C.text, cursor: "pointer", fontSize: 20, padding: "4px", display: "flex", alignItems: "center" },
+  // ── Misc ─────────────────────────────────────────────────────
+  tag:      (color = C.accent) => ({ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, color, background:color+"1E" }),
+  toggle:   (a) => ({ padding:"7px 14px", borderRadius:8, border:"none", background:a?C.surfaceHi:"transparent", color:a?C.text:C.textDim, fontSize:12, fontWeight:a?600:400, cursor:"pointer", fontFamily:"inherit" }),
+  err:      { fontSize:12, color:C.danger, padding:"10px 13px", background:C.dangerDim, borderRadius:10, marginBottom:12, borderLeft:`3px solid ${C.danger}` },
+  driveBtn: { display:"inline-flex", alignItems:"center", gap:8, padding:"8px 14px", borderRadius:10, border:`1px solid ${C.border}`, background:C.surfaceHi, color:C.textMid, fontSize:12, fontWeight:600, cursor:"pointer", textDecoration:"none" },
+  divider:  { height:1, background:C.border, margin:"16px 0" },
+  hamburger:{ background:"none", border:"none", color:C.text, cursor:"pointer", fontSize:20, padding:"4px", display:"flex", alignItems:"center" },
 };
 
 // ============================================================
@@ -242,14 +254,14 @@ function AuthPage({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: "'IBM Plex Mono',monospace" }}>
-      <div style={{ width: "100%", maxWidth: 380 }}>
-        <div style={{ marginBottom: 36 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-            <div style={{ width: 32, height: 32, background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🎬</div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", color: C.text, textTransform: "uppercase" }}>ShootPlan</div>
-              <div style={{ fontSize: 9, color: C.textDim, letterSpacing: "0.12em", textTransform: "uppercase" }}>Production Suite</div>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif" }}>
+      <div style={{ width: "100%", maxWidth: 400 }}>
+        <div style={{ marginBottom: 32, textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
+            <div style={{ width: 44, height: 44, background: C.accent, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, boxShadow: `0 4px 16px ${C.accent}44` }}>🎬</div>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.01em", color: C.text }}>ShootPlan</div>
+              <div style={{ fontSize: 11, color: C.textDim }}>Production Suite</div>
             </div>
           </div>
           <div style={{ height: 1, background: C.border }} />
@@ -262,24 +274,24 @@ function AuthPage({ onLogin }) {
 
         <div style={{ ...S.card, padding: 24 }}>
           {success && <div style={{ fontSize: 13, color: "#10B981", padding: "10px 12px", background: "rgba(16,185,129,0.08)", borderRadius: 6, marginBottom: 14 }}>{success}</div>}
-          {error && <div style={S.err}>{error}</div>}
+          {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
 
           {mode === "login" ? (<>
-            <div style={{ marginBottom: 14 }}><label style={S.label}>E-Mail</label><input style={S.input} type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
-            <div style={{ marginBottom: 20 }}><label style={S.label}>Passwort</label><input style={S.input} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
+            <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
+            <div style={{ marginBottom: 20 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
             <button style={{ ...S.btn("primary"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={handleLogin} disabled={loading}>{loading ? "Anmelden..." : "Anmelden →"}</button>
           </>) : (<>
-            <div style={{ marginBottom: 14 }}><label style={S.label}>Name</label><input style={S.input} placeholder="Vorname Nachname" value={name} onChange={e => setName(e.target.value)} /></div>
-            <div style={{ marginBottom: 14 }}><label style={S.label}>E-Mail</label><input style={S.input} type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
-            <div style={{ marginBottom: 14 }}><label style={S.label}>Passwort</label><input style={S.input} type="password" placeholder="Min. 8 Zeichen" value={password} onChange={e => setPassword(e.target.value)} /></div>
+            <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} placeholder="Vorname Nachname" value={name} onChange={e => setName(e.target.value)} /></div>
+            <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
+            <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" placeholder="Min. 8 Zeichen" value={password} onChange={e => setPassword(e.target.value)} /></div>
             <div style={{ marginBottom: 20 }}>
-              <label style={S.label}>Ich bin...</label>
-              <select style={S.select} value={role} onChange={e => setRole(e.target.value)}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Ich bin...</label>
+              <select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={role} onChange={e => setRole(e.target.value)}>
                 <option value="crew">Crew-Mitglied</option>
                 <option value="actor">Schauspieler/in</option>
               </select>
             </div>
-            <div style={{ fontSize: 12, color: "#555570", marginBottom: 16, padding: "10px 12px", background: "rgba(99,102,241,0.06)", borderRadius: 6 }}>ℹ️ Dein Account wird nach der Registrierung von einem Admin freigeschaltet.</div>
+            <div style={{ fontSize: 12, color: C.textDim, marginBottom: 16, padding: "10px 12px", background: "rgba(99,102,241,0.06)", borderRadius: 6 }}>ℹ️ Dein Account wird nach der Registrierung von einem Admin freigeschaltet.</div>
             <button style={{ ...S.btn("primary"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={handleRegister} disabled={loading}>{loading ? "Registrieren..." : "Account erstellen"}</button>
           </>)}
         </div>
@@ -292,16 +304,16 @@ function ChangePasswordPage({ user, onDone }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [error, setError] = useState("");
   const handleSave = async () => { if (pw.length < 8) { setError("Mindestens 8 Zeichen"); return; } if (pw !== pw2) { setError("Passwörter stimmen nicht überein"); return; } try { await db.update("users", { must_change_password: false }, `id=eq.${user.id}`); onDone(); } catch (e) { setError(e.message); } };
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: "'IBM Plex Mono',monospace" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: "inherit" }}>
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>ShootPlan</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>Neues Passwort setzen</div>
         </div>
         <div style={{ ...S.card, padding: 24 }}>
-          <div style={{ marginBottom: 14 }}><label style={S.label}>Neues Passwort</label><input style={S.input} type="password" value={pw} onChange={e => setPw(e.target.value)} /></div>
-          <div style={{ marginBottom: 18 }}><label style={S.label}>Wiederholen</label><input style={S.input} type="password" value={pw2} onChange={e => setPw2(e.target.value)} /></div>
-          {error && <div style={S.err}>{error}</div>}
+          <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Neues Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pw} onChange={e => setPw(e.target.value)} /></div>
+          <div style={{ marginBottom: 18 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Wiederholen</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pw2} onChange={e => setPw2(e.target.value)} /></div>
+          {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
           <button style={{ ...S.btn("primary"), width: "100%", justifyContent: "center" }} onClick={handleSave}>Speichern</button>
         </div>
       </div>
@@ -313,6 +325,14 @@ function ChangePasswordPage({ user, onDone }) {
 // LAYOUT
 // ============================================================
 function Layout({ page, setPage, user, onLogout, children }) {
+  const [theme, setTheme] = useState(_themeMode);
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    C = { ...THEMES[next] };
+    _themeMode = next;
+    try { localStorage.setItem('sp_theme', next); } catch(e) {}
+    setTheme(next);
+  };
   const width = useWindowSize();
   const mobile = width < 768;
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -350,50 +370,55 @@ function Layout({ page, setPage, user, onLogout, children }) {
 
   const SidebarContent = () => (
     <>
-      <div style={S.logo}>
-        <div style={S.logoMark}>
-          <div style={S.logoIcon}>🎬</div>
-          <div><div style={S.logoText}>ShootPlan</div><div style={S.logoSub}>Production Suite</div></div>
+      <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, background: C.accent, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>🎬</div>
+          <div><div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>ShootPlan</div><div style={{ fontSize: 10, color: C.textDim, marginTop: 1 }}>Production Suite</div></div>
         </div>
       </div>
-      <div style={S.nav}>
+      <div style={{ padding: "8px 10px", flex: 1, display: "flex", flexDirection: "column", gap: 2 }}>
         {nav.map((item, i) => item.section
-          ? <div key={i} style={S.navSection}>{item.section}</div>
-          : <div key={item.id} style={S.navItem(page === item.id || page.startsWith(item.id + "-"))} onClick={() => { setPage(item.id); setSidebarOpen(false); }}><span style={S.navIcon}>{item.icon}</span><span>{item.label}</span></div>
+          ? <div key={i} style={{ fontSize: 10, fontWeight: 600, color: C.textDim, letterSpacing: "0.05em", textTransform: "uppercase", padding: "14px 8px 4px" }}>{item.section}</div>
+          : <div key={item.id} style={S.navItem(page === item.id || page.startsWith(item.id + "-"))} onClick={() => { setPage(item.id); setSidebarOpen(false); }}><span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{item.icon}</span><span>{item.label}</span></div>
         )}
       </div>
-      <div style={S.sidebarUser}>
-        <div style={S.avatar(32)}>{user.name?.[0]}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
-          <div style={{ fontSize: 11, color: "#444460" }}>{ROLE_CONFIG[user.role]?.label || (user.is_admin ? "Admin" : "Crew")}</div>
+      <div style={{...S.sidebarUser, flexDirection:"column", gap:10, padding:"14px 16px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,width:"100%"}}>
+          <div style={S.avatar(32)}>{user.name?.[0]}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
+            <div style={{ fontSize: 11, color: C.textDim }}>{ROLE_CONFIG[user.role]?.label || (user.is_admin ? "Admin" : "Crew")}</div>
+          </div>
+          <button style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16, padding:"4px", borderRadius:6 }} onClick={onLogout} title="Abmelden">↩</button>
         </div>
-        <button style={{ background: "none", border: "none", color: "#444460", cursor: "pointer", fontSize: 18 }} onClick={onLogout}>↩</button>
+        <button onClick={toggleTheme} style={{ width:"100%", padding:"7px 12px", borderRadius:10, border:`1px solid ${C.border}`, background:C.surfaceHi, color:C.textMid, fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"inherit", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+          {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
       </div>
     </>
   );
 
   if (mobile) {
     return (
-      <div style={S.root}>
-        {sidebarOpen && <div style={S.overlay} onClick={() => setSidebarOpen(false)} />}
+      <div style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", transition: "background 0.25s,color 0.25s" }}>
+        {sidebarOpen && <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 150, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }} onClick={() => setSidebarOpen(false)} />}
         <div style={S.sidebar(sidebarOpen)}><SidebarContent /></div>
         <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-          <div style={S.topbar}>
-            <button style={S.hamburger} onClick={() => setSidebarOpen(true)}>☰</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 100 }}>
+            <button style={{ background: "none", border: "none", color: C.text, cursor: "pointer", fontSize: 20, padding: "4px", display: "flex", alignItems: "center" }} onClick={() => setSidebarOpen(true)}>☰</button>
             <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 700, color: C.text, letterSpacing: "0.08em", textTransform: "uppercase" }}>ShootPlan</div></div>
             <div style={S.avatar(30)}>{user.name?.[0]}</div>
           </div>
-          <div style={S.main}>{children}</div>
+          <div style={{ flex: 1, padding: "20px 16px", maxWidth: "100%", boxSizing: "border-box" }}>{children}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ ...S.root, display: "flex" }}>
-      <div style={S.sidebarDesktop}><SidebarContent /></div>
-      <div style={S.mainDesktop}>{children}</div>
+    <div style={{ fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", transition: "background 0.25s,color 0.25s", display: "flex" }}>
+      <div style={{ width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto" }}><SidebarContent /></div>
+      <div style={{ marginLeft: 240, flex: 1, padding: "32px 36px", maxWidth: "calc(100vw - 240px)", boxSizing: "border-box" }}>{children}</div>
     </div>
   );
 }
@@ -408,16 +433,16 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
   const upcoming = visible.filter(s => new Date((s.date_end || s.date_start) + "T23:59:59") >= now && s.status !== "cancelled");
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Guten Tag, {user.name?.split(" ")[0]} 👋</div><div style={S.pageSub}>{now.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Guten Tag, {user.name?.split(" ")[0]} 👋</div><div style={{ fontSize: 12, color: C.textDim }}>{now.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}</div></div>
         <button style={S.btn("primary")} onClick={() => setPage("new-shoot")}>＋ Neuer Shoot</button>
       </div>
       <div style={{ ...S.grid3, marginBottom: 24 }}>
-        <div style={S.statCard}><div style={S.statValue}>{upcoming.length}</div><div style={S.statLabel}>Bevorstehend</div></div>
-        <div style={S.statCard}><div style={S.statValue}>{visible.filter(s => s.status === "confirmed").length}</div><div style={S.statLabel}>Bestätigt</div></div>
-        <div style={S.statCard}><div style={S.statValue}>{visible.filter(s => { const d = new Date(s.date_start); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length}</div><div style={S.statLabel}>Diesen Monat</div></div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{upcoming.length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Bevorstehend</div></div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{visible.filter(s => s.status === "confirmed").length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Bestätigt</div></div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{visible.filter(s => { const d = new Date(s.date_start); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Diesen Monat</div></div>
       </div>
-      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "#E8E8F0" }}>Nächste Shoots</div>
+      <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: C.text }}>Nächste Shoots</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {upcoming.slice(0, 5).map(shoot => {
           const sp = participants.filter(p => p.shoot_id === shoot.id);
@@ -427,8 +452,8 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
             <div key={shoot.id} style={{ ...S.cardHover, display: "flex", alignItems: "center", gap: 12 }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
               <div style={{ width: 4, height: 44, borderRadius: 2, background: sc.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E8F0", marginBottom: 2 }}>{shoot.title}</div>
-                <div style={{ fontSize: 12, color: "#555570" }}>{fmtRange(shoot.date_start, shoot.date_end)} · {shoot.location}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{shoot.title}</div>
+                <div style={{ fontSize: 12, color: C.textDim }}>{fmtRange(shoot.date_start, shoot.date_end)} · {shoot.location}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                 {myP && <span style={S.attendBadge(myP.attendance_status)}>{ATTEND_CONFIG[myP.attendance_status]?.label}</span>}
@@ -437,7 +462,7 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
             </div>
           );
         })}
-        {upcoming.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: "#444460" }}><div style={{ fontSize: 32, marginBottom: 10 }}>🎬</div><div>Keine bevorstehenden Shoots</div><button style={{ ...S.btn("primary"), marginTop: 14 }} onClick={() => setPage("new-shoot")}>Ersten Shoot erstellen</button></div>}
+        {upcoming.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 32, marginBottom: 10 }}>🎬</div><div>Keine bevorstehenden Shoots</div><button style={{ ...S.btn("primary"), marginTop: 14 }} onClick={() => setPage("new-shoot")}>Ersten Shoot erstellen</button></div>}
       </div>
     </div>
   );
@@ -466,7 +491,7 @@ function CalendarView({ shoots, user, setSelectedShoot, setPage }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: "#E8E8F0" }}>{date.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{date.toLocaleDateString("de-DE", { month: "long", year: "numeric" })}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <button style={S.btn("outline")} onClick={() => exportToICS(shoots)}>📥 Export</button>
           <button style={S.btn("outline")} onClick={() => setDate(new Date(year, month-1, 1))}>‹</button>
@@ -476,12 +501,12 @@ function CalendarView({ shoots, user, setSelectedShoot, setPage }) {
       </div>
       <div style={{ ...S.card, padding: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1, marginBottom: 6 }}>
-          {["Mo","Di","Mi","Do","Fr","Sa","So"].map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "#444460", padding: "3px 0" }}>{d}</div>)}
+          {["Mo","Di","Mi","Do","Fr","Sa","So"].map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: C.textDim, padding: "3px 0" }}>{d}</div>)}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
           {cells.map((day, idx) => (
             <div key={idx} style={{ minHeight: 64, background: isToday(day) ? "rgba(99,102,241,0.1)" : "#0A0A0F", borderRadius: 6, padding: "5px 6px", border: isToday(day) ? "1px solid rgba(99,102,241,0.4)" : "1px solid transparent" }}>
-              {day && (<><div style={{ fontSize: 12, fontWeight: isToday(day) ? 800 : 400, color: isToday(day) ? "#818CF8" : "#555570", marginBottom: 3 }}>{day}</div>{getShootsForDay(day).map(s => { const c = STATUS_CONFIG[s.status]||STATUS_CONFIG.planned; return <div key={s.id} style={{ fontSize: 9, fontWeight: 600, padding: "1px 4px", borderRadius: 3, background: c.color+"22", color: c.color, marginBottom: 1, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} onClick={() => { setSelectedShoot(s); setPage("shoot-detail"); }}>{s.title}</div>; })}</>)}
+              {day && (<><div style={{ fontSize: 12, fontWeight: isToday(day) ? 800 : 400, color: isToday(day) ? C.accent : C.textDim, marginBottom: 3 }}>{day}</div>{getShootsForDay(day).map(s => { const c = STATUS_CONFIG[s.status]||STATUS_CONFIG.planned; return <div key={s.id} style={{ fontSize: 9, fontWeight: 600, padding: "1px 4px", borderRadius: 3, background: c.color+"22", color: c.color, marginBottom: 1, cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} onClick={() => { setSelectedShoot(s); setPage("shoot-detail"); }}>{s.title}</div>; })}</>)}
             </div>
           ))}
         </div>
@@ -501,8 +526,8 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
   const sorted = [...filtered].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>{user.is_admin ? "Alle Shoots" : "Meine Shoots"}</div><div style={S.pageSub}>{sorted.length} Produktionen</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>{user.is_admin ? "Alle Shoots" : "Meine Shoots"}</div><div style={{ fontSize: 12, color: C.textDim }}>{sorted.length} Produktionen</div></div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button style={S.btn("primary")} onClick={() => setPage("new-shoot")}>＋ Neu</button>
         </div>
@@ -517,7 +542,7 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
         {[["all","Alle"],["planned","Geplant"],["confirmed","Bestätigt"],["cancelled","Abgesagt"]].map(([val,lbl]) => (
-          <button key={val} style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter===val?"#6366F1":"#1E1E2E", background: filter===val?"rgba(99,102,241,0.15)":"transparent", color: filter===val?"#818CF8":"#555570", fontSize: 12, fontWeight: 600, cursor: "pointer" }} onClick={() => setFilter(val)}>{lbl}</button>
+          <button key={val} style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter===val?C.accent:C.border, background: filter===val?"rgba(99,102,241,0.15)":"transparent", color: filter===val?C.accent:C.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer" }} onClick={() => setFilter(val)}>{lbl}</button>
         ))}
       </div>
       {view === "list" ? (
@@ -531,14 +556,14 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
             return (
               <div key={shoot.id} style={{ ...S.cardHover, display: "flex", gap: 12, alignItems: "center" }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
                 <div style={{ minWidth: 44, textAlign: "center" }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: "#F0F0FA" }}>{new Date(shoot.date_start + "T12:00:00").getDate().toString().padStart(2,"0")}</div>
-                  <div style={{ fontSize: 10, color: "#444460", textTransform: "uppercase" }}>{new Date(shoot.date_start + "T12:00:00").toLocaleString("de-DE",{month:"short"})}</div>
-                  {isMultiDay && <div style={{ fontSize: 9, color: "#6366F1", fontWeight: 700 }}>MULTI</div>}
+                  <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>{new Date(shoot.date_start + "T12:00:00").getDate().toString().padStart(2,"0")}</div>
+                  <div style={{ fontSize: 10, color: C.textDim, textTransform: "uppercase" }}>{new Date(shoot.date_start + "T12:00:00").toLocaleString("de-DE",{month:"short"})}</div>
+                  {isMultiDay && <div style={{ fontSize: 9, color: C.accent, fontWeight: 700 }}>MULTI</div>}
                 </div>
-                <div style={{ width: 1, height: 36, background: "#1E1E2E", flexShrink: 0 }} />
+                <div style={{ width: 1, height: 36, background: C.border, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E8F0", marginBottom: 2 }}>{shoot.title}</div>
-                  <div style={{ fontSize: 12, color: "#555570" }}>{shoot.location}{client ? ` · 🏢 ${client.company}` : ""}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{shoot.title}</div>
+                  <div style={{ fontSize: 12, color: C.textDim }}>{shoot.location}{client ? ` · 🏢 ${client.company}` : ""}</div>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                   {myP && <span style={S.attendBadge(myP.attendance_status)}>{ATTEND_CONFIG[myP.attendance_status]?.label}</span>}
@@ -547,7 +572,7 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
               </div>
             );
           })}
-          {sorted.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: "#444460" }}><div style={{ fontSize: 36, marginBottom: 10 }}>🎬</div><div>Keine Shoots gefunden</div><button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setPage("new-shoot")}>Erstellen</button></div>}
+          {sorted.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>🎬</div><div>Keine Shoots gefunden</div><button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setPage("new-shoot")}>Erstellen</button></div>}
         </div>
       ) : <CalendarView shoots={sorted} user={user} setSelectedShoot={setSelectedShoot} setPage={setPage} />}
     </div>
@@ -647,12 +672,12 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
         <button style={{ ...S.btn("ghost"), padding: "7px 10px" }} onClick={() => setPage("shoots")}>← Zurück</button>
         <div style={{ flex: 1, minWidth: 200 }}>
           {editMode ? <input style={{ ...S.input, fontSize: 18, fontWeight: 700, marginBottom: 6 }} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-            : <div style={{ fontSize: 20, fontWeight: 700, color: "#F0F0FA", marginBottom: 4 }}>{shoot.title}</div>}
+            : <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 4 }}>{shoot.title}</div>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <span style={S.badge(shoot.status)}>{sc.label}</span>
-            <span style={{ fontSize: 12, color: "#555570" }}>{fmtRange(shoot.date_start, shoot.date_end)}</span>
-            {shoot.location && <span style={{ fontSize: 12, color: "#555570" }}>📍 {shoot.location}</span>}
-            {shootClient && <span style={{ fontSize: 12, color: "#6366F1" }}>🏢 {shootClient.company}</span>}
+            <span style={{ fontSize: 12, color: C.textDim }}>{fmtRange(shoot.date_start, shoot.date_end)}</span>
+            {shoot.location && <span style={{ fontSize: 12, color: C.textDim }}>📍 {shoot.location}</span>}
+            {shootClient && <span style={{ fontSize: 12, color: C.accent }}>🏢 {shootClient.company}</span>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -665,57 +690,57 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
 
       <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: "1px solid #1E1E2E", overflowX: "auto" }}>
         {tabs.map(([id,lbl]) => (
-          <button key={id} style={{ padding: "9px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: tab===id?700:400, color: tab===id?"#818CF8":"#555570", borderBottom: tab===id?"2px solid #6366F1":"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap" }} onClick={() => setTab(id)}>{lbl}</button>
+          <button key={id} style={{ padding: "9px 14px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: tab===id?700:400, color: tab===id?C.accent:C.textDim, borderBottom: tab===id?"2px solid #6366F1":"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap" }} onClick={() => setTab(id)}>{lbl}</button>
         ))}
       </div>
 
       {tab === "overview" && (
-        <div style={S.grid2}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={S.card}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#444460", marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Details</div>
+            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Details</div>
               {editMode ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div><label style={S.label}>Titel</label><input style={S.input} value={form.title||""} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/></div>
-                  <div><label style={S.label}>Location</label><input style={S.input} value={form.location||""} onChange={e=>setForm(f=>({...f,location:e.target.value}))}/></div>
+                  <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Titel</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.title||""} onChange={e=>setForm(f=>({...f,title:e.target.value}))}/></div>
+                  <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Location</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.location||""} onChange={e=>setForm(f=>({...f,location:e.target.value}))}/></div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div><label style={S.label}>Startdatum</label><input style={S.input} type="date" value={form.date_start||""} onChange={e=>setForm(f=>({...f,date_start:e.target.value}))}/></div>
-                    <div><label style={S.label}>Enddatum</label><input style={S.input} type="date" value={form.date_end||""} onChange={e=>setForm(f=>({...f,date_end:e.target.value}))}/></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Startdatum</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={form.date_start||""} onChange={e=>setForm(f=>({...f,date_start:e.target.value}))}/></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Enddatum</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={form.date_end||""} onChange={e=>setForm(f=>({...f,date_end:e.target.value}))}/></div>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    <div><label style={S.label}>Startzeit</label><input style={S.input} type="time" value={form.start_time||""} onChange={e=>setForm(f=>({...f,start_time:e.target.value}))}/></div>
-                    <div><label style={S.label}>Endzeit</label><input style={S.input} type="time" value={form.end_time||""} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}/></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Startzeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={form.start_time||""} onChange={e=>setForm(f=>({...f,start_time:e.target.value}))}/></div>
+                    <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Endzeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={form.end_time||""} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}/></div>
                   </div>
-                  <div><label style={S.label}>Kunde</label>
-                    <select style={S.select} value={form.client_id||""} onChange={e=>setForm(f=>({...f,client_id:e.target.value||null}))}>
+                  <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kunde</label>
+                    <select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.client_id||""} onChange={e=>setForm(f=>({...f,client_id:e.target.value||null}))}>
                       <option value="">Kein Kunde</option>
                       {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
                     </select>
                   </div>
-                  <div><label style={S.label}>Budget (€)</label><input style={S.input} type="number" value={form.budget||""} onChange={e=>setForm(f=>({...f,budget:e.target.value}))}/></div>
-                  <div><label style={S.label}>Status</label><select style={S.select} value={form.status||"planned"} onChange={e=>setForm(f=>({...f,status:e.target.value}))}><option value="planned">Geplant</option><option value="confirmed">Bestätigt</option><option value="cancelled">Abgesagt</option></select></div>
+                  <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Budget (€)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={form.budget||""} onChange={e=>setForm(f=>({...f,budget:e.target.value}))}/></div>
+                  <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Status</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.status||"planned"} onChange={e=>setForm(f=>({...f,status:e.target.value}))}><option value="planned">Geplant</option><option value="confirmed">Bestätigt</option><option value="cancelled">Abgesagt</option></select></div>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                   {[["📅", fmtRange(shoot.date_start, shoot.date_end)], ["🕒", shoot.start_time ? `${shoot.start_time} – ${shoot.end_time}` : "—"], ["📍", shoot.location||"—"], ["🏢", shootClient?.company||"—"], ["💶", shoot.budget ? `€ ${Number(shoot.budget).toLocaleString("de-DE")}` : "—"]].map(([k,v]) => (
-                    <div key={k} style={{ display:"flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 14 }}>{k}</span><span style={{ fontSize: 13, color: "#E8E8F0" }}>{v}</span></div>
+                    <div key={k} style={{ display:"flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 14 }}>{k}</span><span style={{ fontSize: 13, color: C.text }}>{v}</span></div>
                   ))}
                 </div>
               )}
             </div>
             {myP && (
-              <div style={S.card}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#444460", marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Mein Status</div>
+              <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Mein Status</div>
                 <div style={{ marginBottom: 10 }}><span style={S.attendBadge(myP.attendance_status)}>{ATTEND_CONFIG[myP.attendance_status]?.label}</span></div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {Object.entries(ATTEND_CONFIG).map(([k,v]) => (<button key={k} style={{ padding: "5px 11px", borderRadius: 20, border: `1px solid ${myP.attendance_status===k?v.color:"#2A2A3E"}`, background: myP.attendance_status===k?v.bg:"transparent", color: myP.attendance_status===k?v.color:"#555570", fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => handleStatusChange(myP.id, k)}>{v.label}</button>))}
+                  {Object.entries(ATTEND_CONFIG).map(([k,v]) => (<button key={k} style={{ padding: "5px 11px", borderRadius: 20, border: `1px solid ${myP.attendance_status===k?v.color:"#2A2A3E"}`, background: myP.attendance_status===k?v.bg:"transparent", color: myP.attendance_status===k?v.color:C.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => handleStatusChange(myP.id, k)}>{v.label}</button>))}
                 </div>
               </div>
             )}
           </div>
-          <div style={S.card}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#444460", marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Notizen</div>
-            {editMode ? <textarea style={S.textarea} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={8}/> : <div style={{ fontSize: 14, color: "#888899", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{shoot.notes||"Keine Notizen"}</div>}
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Notizen</div>
+            {editMode ? <textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={8}/> : <div style={{ fontSize: 14, color: C.textMid, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{shoot.notes||"Keine Notizen"}</div>}
           </div>
         </div>
       )}
@@ -723,7 +748,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
       {tab === "documents" && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#E8E8F0" }}>Dokumente ({links.length})</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>Dokumente ({links.length})</div>
             {canEditShoot && <button style={S.btn("primary")} onClick={() => setShowAddLink(true)}>＋ Link</button>}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -731,20 +756,20 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
               <div key={link.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ fontSize: 26 }}>{linkIcon(link.type)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E8F0" }}>{link.label || "Dokument"}</div>
-                  <div style={{ fontSize: 11, color: "#444460", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link.url}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{link.label || "Dokument"}</div>
+                  <div style={{ fontSize: 11, color: C.textDim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{link.url}</div>
                 </div>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" style={S.driveBtn}>Öffnen →</a>
+                <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.surfaceHi, color: C.textMid, fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "none" }}>Öffnen →</a>
                 {canEditShoot && <button style={S.btn("danger")} onClick={() => handleRemoveLink(link.id)}>✕</button>}
               </div>
             ))}
-            {links.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: "#444460" }}><div style={{ fontSize: 36, marginBottom: 10 }}>📁</div><div>Keine Dokumente hinterlegt</div>{canEditShoot && <button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setShowAddLink(true)}>＋ Link hinzufügen</button>}</div>}
+            {links.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>📁</div><div>Keine Dokumente hinterlegt</div>{canEditShoot && <button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setShowAddLink(true)}>＋ Link hinzufügen</button>}</div>}
           </div>
-          {showAddLink && (<div style={S.modal}><div style={S.modalBox}>
-            <div style={S.modalTitle}>Dokument hinzufügen</div>
-            <div style={{ marginBottom: 12 }}><label style={S.label}>Typ</label><select style={S.select} value={linkForm.type} onChange={e=>setLinkForm(f=>({...f,type:e.target.value}))}><option value="drive">📁 Google Drive</option><option value="onedrive">☁️ OneDrive / SharePoint</option><option value="dropbox">📦 Dropbox</option><option value="other">🔗 Anderer Link</option></select></div>
-            <div style={{ marginBottom: 12 }}><label style={S.label}>Bezeichnung</label><input style={S.input} value={linkForm.label} onChange={e=>setLinkForm(f=>({...f,label:e.target.value}))} placeholder="z. B. Callsheet, Storyboard..."/></div>
-            <div style={{ marginBottom: 18 }}><label style={S.label}>Shared Link URL</label><input style={S.input} value={linkForm.url} onChange={e=>setLinkForm(f=>({...f,url:e.target.value}))} placeholder="https://..."/></div>
+          {showAddLink && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Dokument hinzufügen</div>
+            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Typ</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={linkForm.type} onChange={e=>setLinkForm(f=>({...f,type:e.target.value}))}><option value="drive">📁 Google Drive</option><option value="onedrive">☁️ OneDrive / SharePoint</option><option value="dropbox">📦 Dropbox</option><option value="other">🔗 Anderer Link</option></select></div>
+            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Bezeichnung</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={linkForm.label} onChange={e=>setLinkForm(f=>({...f,label:e.target.value}))} placeholder="z. B. Callsheet, Storyboard..."/></div>
+            <div style={{ marginBottom: 18 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Shared Link URL</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={linkForm.url} onChange={e=>setLinkForm(f=>({...f,url:e.target.value}))} placeholder="https://..."/></div>
             <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleAddLink}>Hinzufügen</button><button style={S.btn("ghost")} onClick={()=>setShowAddLink(false)}>Abbrechen</button></div>
           </div></div>)}
         </div>
@@ -753,7 +778,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
       {tab === "crew" && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#E8E8F0" }}>Crew ({sp.length})</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>Crew ({sp.length})</div>
             {canEditShoot && <button style={S.btn("primary")} onClick={() => setShowAddP(true)}>＋</button>}
           </div>
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
@@ -763,17 +788,17 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
             {sp.map(p => { const u = users.find(u=>u.id===p.user_id)||{name:"Unbekannt",email:""}; return (
               <div key={p.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <div style={S.avatar(34)}>{u.name?.[0]}</div>
-                <div style={{ flex: 1, minWidth: 120 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0" }}>{u.name}</div><div style={{ fontSize: 11, color: "#555570" }}>{p.role_on_shoot}</div></div>
+                <div style={{ flex: 1, minWidth: 120 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 11, color: C.textDim }}>{p.role_on_shoot}</div></div>
                 <span style={S.attendBadge(p.attendance_status)}>{ATTEND_CONFIG[p.attendance_status]?.label}</span>
                 {canEditShoot ? <div style={{ display: "flex", gap: 4 }}><select style={{ ...S.select, width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select><button style={S.btn("danger")} onClick={()=>handleRemoveP(p.id)}>✕</button></div>
                 : p.user_id===user.id && <select style={{ ...S.select, width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>}
               </div>
             ); })}
           </div>
-          {showAddP && (<div style={S.modal}><div style={S.modalBox}>
-            <div style={S.modalTitle}>Crew hinzufügen</div>
-            <div style={{ marginBottom: 12 }}><label style={S.label}>Person</label><select style={S.select} value={addUserId} onChange={e=>setAddUserId(e.target.value)}><option value="">Wählen...</option>{users.filter(u=>!sp.find(p=>p.user_id===u.id)&&u.is_approved).map(u=><option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}</select></div>
-            <div style={{ marginBottom: 18 }}><label style={S.label}>Rolle</label><input style={S.input} value={addRole} onChange={e=>setAddRole(e.target.value)} placeholder="z. B. Director, Gaffer, Schauspieler..."/></div>
+          {showAddP && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Crew hinzufügen</div>
+            <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Person</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={addUserId} onChange={e=>setAddUserId(e.target.value)}><option value="">Wählen...</option>{users.filter(u=>!sp.find(p=>p.user_id===u.id)&&u.is_approved).map(u=><option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}</select></div>
+            <div style={{ marginBottom: 18 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Rolle</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={addRole} onChange={e=>setAddRole(e.target.value)} placeholder="z. B. Director, Gaffer, Schauspieler..."/></div>
             <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleAddP}>Hinzufügen</button><button style={S.btn("ghost")} onClick={()=>setShowAddP(false)}>Abbrechen</button></div>
           </div></div>)}
         </div>
@@ -796,15 +821,15 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                 {canEditShoot ? (
                   <div style={{ ...S.card, padding: 12 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr auto", gap: 8, alignItems: "start" }}>
-                      <div><label style={S.label}>Zeit</label><input style={S.input} type="time" value={entry.time||""} onChange={e=>updateSched(entry.id,"time",e.target.value)}/></div>
-                      <div><label style={S.label}>Titel</label><input style={S.input} value={entry.title||""} onChange={e=>updateSched(entry.id,"title",e.target.value)}/></div>
-                      <div><label style={S.label}>Info</label><input style={S.input} value={entry.description||""} onChange={e=>updateSched(entry.id,"description",e.target.value)}/></div>
+                      <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Zeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={entry.time||""} onChange={e=>updateSched(entry.id,"time",e.target.value)}/></div>
+                      <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Titel</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={entry.title||""} onChange={e=>updateSched(entry.id,"title",e.target.value)}/></div>
+                      <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Info</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={entry.description||""} onChange={e=>updateSched(entry.id,"description",e.target.value)}/></div>
                       <button style={{ ...S.btn("danger"), marginTop: 20 }} onClick={()=>deleteSched(entry.id)}>✕</button>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display: "flex", gap: 10, alignItems: "baseline", paddingBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: C.accent, minWidth: 44, fontFamily: "'IBM Plex Mono',monospace" }}>{entry.time}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.accent, minWidth: 44, fontFamily: "inherit" }}>{entry.time}</span>
                     <div><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{entry.title}</div>{entry.description && <div style={{ fontSize: 12, color: C.textMid }}>{entry.description}</div>}</div>
                   </div>
                 )}
@@ -820,16 +845,16 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
           {/* Summary bar */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 20 }}>
             <div style={{ ...S.statCard, padding: "14px 18px" }}>
-              <div style={S.statValue}>{shootEquip.length}</div>
-              <div style={S.statLabel}>Crew Equipment</div>
+              <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{shootEquip.length}</div>
+              <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Crew Equipment</div>
             </div>
             <div style={{ ...S.statCard, padding: "14px 18px" }}>
-              <div style={S.statValue}>{rentalEquip.length}</div>
-              <div style={S.statLabel}>Mietequipment</div>
+              <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{rentalEquip.length}</div>
+              <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Mietequipment</div>
             </div>
             <div style={{ ...S.statCard, padding: "14px 18px", borderLeft: `2px solid ${C.accent}` }}>
               <div style={{ ...S.statValue, color: C.accent }}>€{rentalTotal.toLocaleString("de-DE", {minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-              <div style={S.statLabel}>Mietkosten ({shootDays} Tag{shootDays!==1?"e":""})</div>
+              <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Mietkosten ({shootDays} Tag{shootDays!==1?"e":""})</div>
             </div>
           </div>
 
@@ -849,7 +874,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                   const byUser = {};
                   shootEquip.forEach(e => { const u = users.find(u => u.id === e.user_id) || { name: "Unbekannt" }; if (!byUser[e.user_id]) byUser[e.user_id] = { user: u, items: [] }; byUser[e.user_id].items.push(e); });
                   return Object.values(byUser).map(({ user: u, items }) => (
-                    <div key={u.id || u.name} style={S.card}>
+                    <div key={u.id || u.name} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                         <div style={{ ...S.avatar(24), fontSize: 10 }}>{u.name?.[0]}</div>
                         <div style={{ fontSize: 11, fontWeight: 700, color: C.text, textTransform: "uppercase", letterSpacing: "0.06em" }}>{u.name}</div>
@@ -901,13 +926,13 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                         <label style={{ ...S.label, marginBottom: 2 }}>Anz.</label>
                         <input style={{ ...S.input, width: 60, padding: "5px 8px", fontSize: 12 }} type="number" min="1" value={r.quantity||1} onChange={e => updateRentalField(r.id, "quantity", e.target.value)} />
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, minWidth: 80, textAlign: "right", fontFamily: "'IBM Plex Mono',monospace" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, minWidth: 80, textAlign: "right", fontFamily: "inherit" }}>
                         CHF {((parseFloat(r.daily_rate)||0)*(parseInt(r.quantity)||1)*shootDays).toFixed(2)}
                       </div>
                       <button style={{ ...S.btn("danger"), padding: "4px 10px" }} onClick={() => removeRentalEquip(r.id)}>✕</button>
                     </div>
                   ) : (
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, fontFamily: "'IBM Plex Mono',monospace" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, fontFamily: "inherit" }}>
                       CHF {(parseFloat(r.daily_rate)||0).toFixed(2)}/Tag × {r.quantity||1} × {shootDays}d = CHF {((parseFloat(r.daily_rate)||0)*(parseInt(r.quantity)||1)*shootDays).toFixed(2)}
                     </div>
                   )}
@@ -916,15 +941,15 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
               {rentalEquip.length > 0 && (
                 <div style={{ padding: "10px 14px", background: C.accentDim, border: `1px solid ${C.accent}33`, borderRadius: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: "0.08em" }}>Total Mietkosten</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: C.accent, fontFamily: "'IBM Plex Mono',monospace" }}>CHF {rentalTotal.toFixed(2)}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: C.accent, fontFamily: "inherit" }}>CHF {rentalTotal.toFixed(2)}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* MODALS */}
-          {showMyEquipPicker && (<div style={S.modal}><div style={S.modalBox}>
-            <div style={S.modalTitle}>Mein Equipment zum Shoot hinzufügen</div>
+          {showMyEquipPicker && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Mein Equipment zum Shoot hinzufügen</div>
             {userEquipment.length === 0 ? (
               <div style={{ color: C.textDim, fontSize: 12, padding: "16px 0", marginBottom: 16 }}>Du hast noch kein Equipment in deinem Profil gespeichert. Gehe zu "Mein Equipment" in den Einstellungen.</div>
             ) : (
@@ -943,15 +968,15 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
             <button style={S.btn("ghost")} onClick={() => setShowMyEquipPicker(false)}>Schliessen</button>
           </div></div>)}
 
-          {showAddRental && (<div style={S.modal}><div style={S.modalBox}>
-            <div style={S.modalTitle}>Mietequipment hinzufügen</div>
+          {showAddRental && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+            <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Mietequipment hinzufügen</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-              <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Bezeichnung *</label><input style={S.input} value={rentalForm.name} onChange={e=>setRentalForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony FX3, Aputure 300D..."/></div>
-              <div><label style={S.label}>Kategorie</label><input style={S.input} value={rentalForm.category} onChange={e=>setRentalForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton..."/></div>
-              <div><label style={S.label}>CHF / Tag</label><input style={S.input} type="number" value={rentalForm.daily_rate} onChange={e=>setRentalForm(f=>({...f,daily_rate:e.target.value}))} placeholder="0.00"/></div>
-              <div><label style={S.label}>Anzahl</label><input style={S.input} type="number" min="1" value={rentalForm.quantity} onChange={e=>setRentalForm(f=>({...f,quantity:e.target.value}))}/></div>
+              <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Bezeichnung *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={rentalForm.name} onChange={e=>setRentalForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony FX3, Aputure 300D..."/></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kategorie</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={rentalForm.category} onChange={e=>setRentalForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton..."/></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>CHF / Tag</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={rentalForm.daily_rate} onChange={e=>setRentalForm(f=>({...f,daily_rate:e.target.value}))} placeholder="0.00"/></div>
+              <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Anzahl</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" min="1" value={rentalForm.quantity} onChange={e=>setRentalForm(f=>({...f,quantity:e.target.value}))}/></div>
               <div style={{ gridColumn: "1/-1" }}>
-                {rentalForm.daily_rate && <div style={{ fontSize: 11, color: C.accent, marginTop: 4, fontFamily: "'IBM Plex Mono',monospace" }}>
+                {rentalForm.daily_rate && <div style={{ fontSize: 11, color: C.accent, marginTop: 4, fontFamily: "inherit" }}>
                   CHF {(parseFloat(rentalForm.daily_rate)||0).toFixed(2)} × {parseInt(rentalForm.quantity)||1} × {shootDays} Tage = CHF {((parseFloat(rentalForm.daily_rate)||0)*(parseInt(rentalForm.quantity)||1)*shootDays).toFixed(2)}
                 </div>}
               </div>
@@ -1066,7 +1091,7 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
         <div key={partNum} style={{ marginBottom: 20 }}>
           {/* Part header */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "8px 12px", background: C.surfaceHi, border: `1px solid ${C.borderHi}`, borderLeft: `3px solid ${C.accent}`, borderRadius: 2 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, fontFamily: "'IBM Plex Mono',monospace", letterSpacing: "0.08em" }}>TEIL {partNum}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: C.accent, fontFamily: "inherit", letterSpacing: "0.08em" }}>TEIL {partNum}</span>
             <span style={{ fontSize: 10, color: C.textDim }}>{Object.values(scenes).flat().length} Shots</span>
             <div style={{ flex: 1 }}/>
             {canEdit && <button style={{ ...S.btn("ghost"), padding: "3px 10px", fontSize: 10 }} onClick={() => addSceneToPart(parseInt(partNum))}>＋ Szene</button>}
@@ -1077,7 +1102,7 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
             <div key={sceneNum} style={{ marginBottom: 12, marginLeft: 12 }}>
               {/* Scene header */}
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "5px 10px", background: C.surface, border: `1px solid ${C.border}`, borderLeft: `2px solid ${C.purple}`, borderRadius: 2 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: C.purple, fontFamily: "'IBM Plex Mono',monospace" }}>{partNum}.{sceneNum}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.purple, fontFamily: "inherit" }}>{partNum}.{sceneNum}</span>
                 <span style={{ fontSize: 10, color: C.textDim }}>{shotList.length} Shots</span>
                 <div style={{ flex: 1 }}/>
                 {canEdit && <button style={{ ...S.btn("ghost"), padding: "2px 8px", fontSize: 10 }} onClick={() => addShotToScene(parseInt(partNum), parseInt(sceneNum))}>＋ Shot</button>}
@@ -1093,7 +1118,7 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
                     <div key={shot.id} style={{ ...S.card, padding: "10px 12px", borderLeft: `2px solid ${stColor}` }}>
                       {/* Collapsed row */}
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: stColor, fontFamily: "'IBM Plex Mono',monospace", minWidth: 44, flexShrink: 0 }}>{code}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: stColor, fontFamily: "inherit", minWidth: 44, flexShrink: 0 }}>{code}</span>
                         {canEdit
                           ? <input style={{ ...S.input, flex: 1, padding: "4px 8px", fontSize: 12 }} value={shot.title||""} onChange={e=>updateShot(shot.id,"title",e.target.value)} placeholder="Shot-Titel..."/>
                           : <span style={{ flex: 1, fontSize: 12, color: C.text }}>{shot.title || "—"}</span>}
@@ -1109,13 +1134,13 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
                       {/* Expanded details */}
                       {isOpen && (
                         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-                          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Beschreibung</label>{canEdit ? <textarea style={{ ...S.textarea, minHeight: 52 }} value={shot.description||""} onChange={e=>updateShot(shot.id,"description",e.target.value)}/> : <div style={{ ...S.input, minHeight: 52, color: C.textMid, paddingTop: 8 }}>{shot.description||"—"}</div>}</div>
-                          <div><label style={S.label}>Kamera / Optik</label><input style={S.input} value={shot.camera_setting||""} onChange={e=>updateShot(shot.id,"camera_setting",e.target.value)} placeholder="24mm f/2.8" readOnly={!canEdit}/></div>
-                          <div><label style={S.label}>Dauer (hh:mm)</label><input style={S.input} value={shot.duration||""} onChange={e=>updateShot(shot.id,"duration",e.target.value)} placeholder="00:30" readOnly={!canEdit}/></div>
+                          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label>{canEdit ? <textarea style={{ ...S.textarea, minHeight: 52 }} value={shot.description||""} onChange={e=>updateShot(shot.id,"description",e.target.value)}/> : <div style={{ ...S.input, minHeight: 52, color: C.textMid, paddingTop: 8 }}>{shot.description||"—"}</div>}</div>
+                          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kamera / Optik</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={shot.camera_setting||""} onChange={e=>updateShot(shot.id,"camera_setting",e.target.value)} placeholder="24mm f/2.8" readOnly={!canEdit}/></div>
+                          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Dauer (hh:mm)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={shot.duration||""} onChange={e=>updateShot(shot.id,"duration",e.target.value)} placeholder="00:30" readOnly={!canEdit}/></div>
 
                           {/* Reference image */}
                           <div style={{ gridColumn: "1/-1" }}>
-                            <label style={S.label}>Referenzbild</label>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Referenzbild</label>
                             <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                               {shot.image_url ? (
                                 <div style={{ position: "relative" }}>
@@ -1180,8 +1205,8 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
 
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Mein Equipment</div><div style={S.pageSub}>{userEquipment.length} Items gespeichert — verfügbar bei jedem Shoot</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Mein Equipment</div><div style={{ fontSize: 12, color: C.textDim }}>{userEquipment.length} Items gespeichert — verfügbar bei jedem Shoot</div></div>
         <button style={S.btn("primary")} onClick={openNew}>＋ Equipment</button>
       </div>
       {userEquipment.length === 0 ? (
@@ -1201,7 +1226,7 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
                   <div key={item.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 180 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
-                      {item.serial_number && <div style={{ fontSize: 10, color: C.textDim, fontFamily: "'IBM Plex Mono',monospace" }}>S/N: {item.serial_number}</div>}
+                      {item.serial_number && <div style={{ fontSize: 10, color: C.textDim, fontFamily: "inherit" }}>S/N: {item.serial_number}</div>}
                       {item.notes && <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>{item.notes}</div>}
                     </div>
                     <div style={{ display: "flex", gap: 6 }}>
@@ -1215,13 +1240,13 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
           ))}
         </div>
       )}
-      {showModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>{editItem ? "Equipment bearbeiten" : "Neues Equipment"}</div>
+      {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>{editItem ? "Equipment bearbeiten" : "Neues Equipment"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Bezeichnung *</label><input style={S.input} value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony A7 IV, DJI RS3..."/></div>
-          <div><label style={S.label}>Kategorie</label><input style={S.input} value={form.category||""} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton, Grip..."/></div>
-          <div><label style={S.label}>Seriennummer</label><input style={S.input} value={form.serial_number||""} onChange={e=>setForm(f=>({...f,serial_number:e.target.value}))}/></div>
-          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Notizen</label><textarea style={S.textarea} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Zubehör, Besonderheiten..."/></div>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Bezeichnung *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony A7 IV, DJI RS3..."/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kategorie</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.category||""} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton, Grip..."/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Seriennummer</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.serial_number||""} onChange={e=>setForm(f=>({...f,serial_number:e.target.value}))}/></div>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Zubehör, Besonderheiten..."/></div>
         </div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleSave} disabled={saving}>{saving?"...":"Speichern"}</button><button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button></div>
       </div></div>)}
@@ -1241,33 +1266,33 @@ function NewShootPage({ user, clients, setPage, onSave }) {
   };
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Neuer Shoot</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Neuer Shoot</div></div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleSave} disabled={saving}>{saving?"Erstellt...":"Shoot erstellen"}</button><button style={S.btn("ghost")} onClick={() => setPage("shoots")}>Abbrechen</button></div>
       </div>
-      {error && <div style={S.err}>{error}</div>}
-      <div style={S.grid2}>
+      {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
         <div style={{ ...S.card, display: "flex", flexDirection: "column", gap: 12 }}>
-          <div><label style={S.label}>Titel *</label><input style={S.input} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="z. B. Brand Film – Kunde AG"/></div>
-          <div><label style={S.label}>Location</label><input style={S.input} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="z. B. Berlin Studio B"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Titel *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="z. B. Brand Film – Kunde AG"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Location</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="z. B. Berlin Studio B"/></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div><label style={S.label}>Startdatum *</label><input style={S.input} type="date" value={form.date_start} onChange={e=>setForm(f=>({...f,date_start:e.target.value}))}/></div>
-            <div><label style={S.label}>Enddatum</label><input style={S.input} type="date" value={form.date_end} onChange={e=>setForm(f=>({...f,date_end:e.target.value}))}/></div>
+            <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Startdatum *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={form.date_start} onChange={e=>setForm(f=>({...f,date_start:e.target.value}))}/></div>
+            <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Enddatum</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={form.date_end} onChange={e=>setForm(f=>({...f,date_end:e.target.value}))}/></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div><label style={S.label}>Startzeit</label><input style={S.input} type="time" value={form.start_time} onChange={e=>setForm(f=>({...f,start_time:e.target.value}))}/></div>
-            <div><label style={S.label}>Endzeit</label><input style={S.input} type="time" value={form.end_time} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}/></div>
+            <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Startzeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={form.start_time} onChange={e=>setForm(f=>({...f,start_time:e.target.value}))}/></div>
+            <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Endzeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={form.end_time} onChange={e=>setForm(f=>({...f,end_time:e.target.value}))}/></div>
           </div>
-          <div><label style={S.label}>Kunde</label>
-            <select style={S.select} value={form.client_id} onChange={e=>setForm(f=>({...f,client_id:e.target.value}))}>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kunde</label>
+            <select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.client_id} onChange={e=>setForm(f=>({...f,client_id:e.target.value}))}>
               <option value="">Kein Kunde</option>
               {clients.map(c => <option key={c.id} value={c.id}>{c.company}</option>)}
             </select>
           </div>
-          <div><label style={S.label}>Budget (€)</label><input style={S.input} type="number" value={form.budget} onChange={e=>setForm(f=>({...f,budget:e.target.value}))} placeholder="8500"/></div>
-          <div><label style={S.label}>Status</label><select style={S.select} value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}><option value="planned">Geplant</option><option value="confirmed">Bestätigt</option><option value="cancelled">Abgesagt</option></select></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Budget (€)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={form.budget} onChange={e=>setForm(f=>({...f,budget:e.target.value}))} placeholder="8500"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Status</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}><option value="planned">Geplant</option><option value="confirmed">Bestätigt</option><option value="cancelled">Abgesagt</option></select></div>
         </div>
-        <div style={S.card}><label style={S.label}>Notizen</label><textarea style={{ ...S.textarea, minHeight: 200 }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Besonderheiten, Equipment..."/></div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ ...S.textarea, minHeight: 200 }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Besonderheiten, Equipment..."/></div>
       </div>
     </div>
   );
@@ -1292,42 +1317,42 @@ function ClientsPage({ user }) {
   const filtered = clients.filter(c => !search || c.company?.toLowerCase().includes(search.toLowerCase()) || c.contact_name?.toLowerCase().includes(search.toLowerCase()));
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Kunden</div><div style={S.pageSub}>{clients.length} Einträge</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Kunden</div><div style={{ fontSize: 12, color: C.textDim }}>{clients.length} Einträge</div></div>
         <div style={{ display: "flex", gap: 8 }}><input style={{ ...S.input, maxWidth: 200 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
       </div>
-      {loading ? <div style={{ textAlign:"center", padding:40, color:"#555570" }}>Lade...</div> : (
+      {loading ? <div style={{ textAlign:"center", padding:40, color:C.textDim }}>Lade...</div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map(c => (
-            <div key={c.id} style={S.card}>
+            <div key={c.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <div style={{ ...S.avatar(40), borderRadius: 10, fontSize: 18, background: "rgba(99,102,241,0.15)" }}>🏢</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#E8E8F0" }}>{c.company}</div>
-                  {c.contact_name && <div style={{ fontSize: 13, color: "#888899" }}>{c.contact_name}</div>}
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{c.company}</div>
+                  {c.contact_name && <div style={{ fontSize: 13, color: C.textMid }}>{c.contact_name}</div>}
                   <div style={{ display: "flex", gap: 12, marginTop: 5, flexWrap: "wrap" }}>
-                    {c.email && <a href={`mailto:${c.email}`} style={{ fontSize: 12, color: "#6366F1", textDecoration: "none" }}>✉ {c.email}</a>}
-                    {c.phone && <a href={`tel:${c.phone}`} style={{ fontSize: 12, color: "#6366F1", textDecoration: "none" }}>📞 {c.phone}</a>}
-                    {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#6366F1", textDecoration: "none" }}>🌐 Website</a>}
+                    {c.email && <a href={`mailto:${c.email}`} style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>✉ {c.email}</a>}
+                    {c.phone && <a href={`tel:${c.phone}`} style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>📞 {c.phone}</a>}
+                    {c.website && <a href={c.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>🌐 Website</a>}
                   </div>
                 </div>
                 {user.is_admin && <div style={{ display: "flex", gap: 6 }}><button style={S.btn("outline")} onClick={() => openEdit(c)}>✏️</button><button style={S.btn("danger")} onClick={() => handleDelete(c.id)}>✕</button></div>}
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:"#444460" }}><div style={{ fontSize:36, marginBottom:10 }}>🏢</div><div>Keine Kunden</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Kunden anlegen</button>}</div>}
+          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:C.textDim }}><div style={{ fontSize:36, marginBottom:10 }}>🏢</div><div>Keine Kunden</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Kunden anlegen</button>}</div>}
         </div>
       )}
-      {showModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>{editClient ? "Kunde bearbeiten" : "Neuer Kunde"}</div>
+      {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>{editClient ? "Kunde bearbeiten" : "Neuer Kunde"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10 }}>
-          <div style={{ gridColumn: "1 / -1" }}><label style={S.label}>Firma *</label><input style={S.input} value={form.company||""} onChange={e=>setForm(f=>({...f,company:e.target.value}))}/></div>
-          <div><label style={S.label}>Ansprechpartner</label><input style={S.input} value={form.contact_name||""} onChange={e=>setForm(f=>({...f,contact_name:e.target.value}))}/></div>
-          <div><label style={S.label}>E-Mail</label><input style={S.input} type="email" value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
-          <div><label style={S.label}>Telefon</label><input style={S.input} value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></div>
-          <div><label style={S.label}>Website</label><input style={S.input} value={form.website||""} onChange={e=>setForm(f=>({...f,website:e.target.value}))} placeholder="https://..."/></div>
-          <div style={{ gridColumn: "1 / -1" }}><label style={S.label}>Adresse</label><input style={S.input} value={form.address||""} onChange={e=>setForm(f=>({...f,address:e.target.value}))}/></div>
-          <div style={{ gridColumn: "1 / -1" }}><label style={S.label}>Notizen</label><textarea style={S.textarea} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Firma *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.company||""} onChange={e=>setForm(f=>({...f,company:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Ansprechpartner</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.contact_name||""} onChange={e=>setForm(f=>({...f,contact_name:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Telefon</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Website</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.website||""} onChange={e=>setForm(f=>({...f,website:e.target.value}))} placeholder="https://..."/></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Adresse</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.address||""} onChange={e=>setForm(f=>({...f,address:e.target.value}))}/></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}><button style={S.btn("primary")} onClick={handleSave} disabled={saving}>{saving?"...":"Speichern"}</button><button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button></div>
       </div></div>)}
@@ -1354,46 +1379,46 @@ function ActorsPage({ user }) {
   const filtered = actors.filter(a => { const ms = !search || a.name?.toLowerCase().includes(search.toLowerCase()) || a.genre?.toLowerCase().includes(search.toLowerCase()); const mg = genreFilter === "all" || a.genre === genreFilter; return ms && mg; });
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Schauspieler</div><div style={S.pageSub}>{actors.length} Einträge</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Schauspieler</div><div style={{ fontSize: 12, color: C.textDim }}>{actors.length} Einträge</div></div>
         <div style={{ display: "flex", gap: 8 }}><input style={{ ...S.input, maxWidth: 180 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
       </div>
       <div style={{ display: "flex", gap: 5, marginBottom: 16, flexWrap: "wrap" }}>
-        {[["all","Alle"], ...GENRES.map(g => [g,g])].map(([val,lbl]) => <button key={val} style={{ padding: "5px 11px", borderRadius: 20, border: "1px solid", borderColor: genreFilter===val?"#6366F1":"#1E1E2E", background: genreFilter===val?"rgba(99,102,241,0.15)":"transparent", color: genreFilter===val?"#818CF8":"#555570", fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => setGenreFilter(val)}>{lbl}</button>)}
+        {[["all","Alle"], ...GENRES.map(g => [g,g])].map(([val,lbl]) => <button key={val} style={{ padding: "5px 11px", borderRadius: 20, border: "1px solid", borderColor: genreFilter===val?C.accent:C.border, background: genreFilter===val?"rgba(99,102,241,0.15)":"transparent", color: genreFilter===val?C.accent:C.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => setGenreFilter(val)}>{lbl}</button>)}
       </div>
-      {loading ? <div style={{ textAlign:"center", padding:40, color:"#555570" }}>Lade...</div> : (
+      {loading ? <div style={{ textAlign:"center", padding:40, color:C.textDim }}>Lade...</div> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
           {filtered.map(a => (
-            <div key={a.id} style={S.card}>
+            <div key={a.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div style={S.avatar(40)}>{a.name?.[0]}</div>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700, color: "#E8E8F0" }}>{a.name}</div>{a.genre && <span style={S.tag("#8B5CF6")}>{a.genre}</span>}</div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{a.name}</div>{a.genre && <span style={S.tag("#8B5CF6")}>{a.genre}</span>}</div>
                 {user.is_admin && <div style={{ display: "flex", gap: 4 }}><button style={{ ...S.btn("ghost"), padding: "4px 8px" }} onClick={() => openEdit(a)}>✏️</button><button style={{ ...S.btn("danger"), padding: "4px 8px" }} onClick={() => handleDelete(a.id)}>✕</button></div>}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {a.email && <a href={`mailto:${a.email}`} style={{ fontSize: 12, color: "#818CF8", textDecoration: "none" }}>✉️ {a.email}</a>}
-                {a.phone && <a href={`tel:${a.phone}`} style={{ fontSize: 12, color: "#818CF8", textDecoration: "none" }}>📞 {a.phone}</a>}
+                {a.email && <a href={`mailto:${a.email}`} style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>✉️ {a.email}</a>}
+                {a.phone && <a href={`tel:${a.phone}`} style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>📞 {a.phone}</a>}
                 {a.instagram && <a href={`https://instagram.com/${a.instagram.replace("@","")}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#E1306C", textDecoration: "none" }}>📸 @{a.instagram.replace("@","")}</a>}
                 {a.tiktok && <a href={`https://tiktok.com/@${a.tiktok.replace("@","")}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#69C9D0", textDecoration: "none" }}>🎵 @{a.tiktok.replace("@","")}</a>}
-                {a.website && <a href={a.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#818CF8", textDecoration: "none" }}>🌐 Website</a>}
-                {a.notes && <div style={{ fontSize: 11, color: "#555570", fontStyle: "italic", marginTop: 2 }}>{a.notes}</div>}
+                {a.website && <a href={a.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: C.accent, textDecoration: "none" }}>🌐 Website</a>}
+                {a.notes && <div style={{ fontSize: 11, color: C.textDim, fontStyle: "italic", marginTop: 2 }}>{a.notes}</div>}
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:"#444460", gridColumn:"1/-1" }}><div style={{ fontSize:36, marginBottom:10 }}>🎭</div><div>Keine Einträge</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Schauspieler anlegen</button>}</div>}
+          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:C.textDim, gridColumn:"1/-1" }}><div style={{ fontSize:36, marginBottom:10 }}>🎭</div><div>Keine Einträge</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Schauspieler anlegen</button>}</div>}
         </div>
       )}
-      {showModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>{editActor ? "Bearbeiten" : "Neuer Schauspieler"}</div>
+      {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>{editActor ? "Bearbeiten" : "Neuer Schauspieler"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
-          <div style={{ gridColumn: "1 / -1" }}><label style={S.label}>Name *</label><input style={S.input} value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
-          <div><label style={S.label}>E-Mail</label><input style={S.input} type="email" value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
-          <div><label style={S.label}>Telefon</label><input style={S.input} value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></div>
-          <div><label style={S.label}>Instagram</label><input style={S.input} value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username"/></div>
-          <div><label style={S.label}>TikTok</label><input style={S.input} value={form.tiktok||""} onChange={e=>setForm(f=>({...f,tiktok:e.target.value}))} placeholder="@username"/></div>
-          <div><label style={S.label}>Website</label><input style={S.input} value={form.website||""} onChange={e=>setForm(f=>({...f,website:e.target.value}))} placeholder="https://..."/></div>
-          <div><label style={S.label}>Genre</label><select style={S.select} value={form.genre||""} onChange={e=>setForm(f=>({...f,genre:e.target.value}))}><option value="">Wählen...</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
-          <div style={{ gridColumn: "1 / -1" }}><label style={S.label}>Notizen</label><textarea style={S.textarea} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Telefon</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.phone||""} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Instagram</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.instagram||""} onChange={e=>setForm(f=>({...f,instagram:e.target.value}))} placeholder="@username"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>TikTok</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.tiktok||""} onChange={e=>setForm(f=>({...f,tiktok:e.target.value}))} placeholder="@username"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Website</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.website||""} onChange={e=>setForm(f=>({...f,website:e.target.value}))} placeholder="https://..."/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Genre</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.genre||""} onChange={e=>setForm(f=>({...f,genre:e.target.value}))}><option value="">Wählen...</option>{GENRES.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
+          <div style={{ gridColumn: "1 / -1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={form.notes||""} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}><button style={S.btn("primary")} onClick={handleSave} disabled={saving}>{saving?"...":"Speichern"}</button><button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button></div>
       </div></div>)}
@@ -1427,15 +1452,15 @@ function UsersPage({ users, setUsers, user: currentUser }) {
 
   return (
     <div>
-      <div style={S.pageHeader}><div><div style={S.pageTitle}>Benutzer</div><div style={S.pageSub}>{approved.length} aktiv · {pending.length} ausstehend</div></div><button style={S.btn("primary")} onClick={() => setShowModal(true)}>＋ Manuell anlegen</button></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}><div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Benutzer</div><div style={{ fontSize: 12, color: C.textDim }}>{approved.length} aktiv · {pending.length} ausstehend</div></div><button style={S.btn("primary")} onClick={() => setShowModal(true)}>＋ Manuell anlegen</button></div>
 
       {pending.length > 0 && (<>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#F59E0B", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>⏳ Ausstehende Anfragen ({pending.length})</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>⏳ Ausstehende Anfragen ({pending.length})</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
           {pending.map(u => (
             <div key={u.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.05)" }}>
               <div style={S.avatar(36)}>{u.name?.[0]}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0" }}>{u.name}</div><div style={{ fontSize: 11, color: "#555570" }}>{u.email} · <span style={S.roleBadge(u.role)}>{ROLE_CONFIG[u.role]?.label || u.role}</span></div></div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 11, color: C.textDim }}>{u.email} · <span style={S.roleBadge(u.role)}>{ROLE_CONFIG[u.role]?.label || u.role}</span></div></div>
               <button style={S.btn("primary")} onClick={() => handleApprove(u)}>✓ Freigeben</button>
               <button style={S.btn("danger")} onClick={() => handleReject(u)}>✕ Ablehnen</button>
             </div>
@@ -1443,30 +1468,30 @@ function UsersPage({ users, setUsers, user: currentUser }) {
         </div>
       </>)}
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#555570", marginBottom: 10 }}>Aktive Benutzer</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.textDim, marginBottom: 10 }}>Aktive Benutzer</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {approved.map(u => (
           <div key={u.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={S.avatar(36)}>{u.name?.[0]}</div>
             <div style={{ flex: 1, minWidth: 150 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#E8E8F0", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>{u.name}<span style={S.roleBadge(u.role || (u.is_admin ? "admin" : "crew"))}>{ROLE_CONFIG[u.role]?.label || (u.is_admin ? "Admin" : "Crew")}</span>{u.must_change_password && <span style={S.tag("#EF4444")}>⚠ PW ändern</span>}</div>
-              <div style={{ fontSize: 11, color: "#555570" }}>{u.email}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>{u.name}<span style={S.roleBadge(u.role || (u.is_admin ? "admin" : "crew"))}>{ROLE_CONFIG[u.role]?.label || (u.is_admin ? "Admin" : "Crew")}</span>{u.must_change_password && <span style={S.tag("#EF4444")}>⚠ PW ändern</span>}</div>
+              <div style={{ fontSize: 11, color: C.textDim }}>{u.email}</div>
             </div>
             {u.id !== currentUser.id && <button style={S.btn("outline")} onClick={() => handleToggleAdmin(u)}>{u.is_admin ? "→ Crew" : "→ Admin"}</button>}
           </div>
         ))}
       </div>
 
-      {showModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Benutzer manuell anlegen</div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>Name</label><input style={S.input} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>E-Mail</label><input style={S.input} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>Rolle</label><select style={S.select} value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}><option value="crew">Crew</option><option value="actor">Schauspieler</option><option value="admin">Admin</option></select></div>
-        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><input type="checkbox" id="ia" checked={form.is_admin} onChange={e=>setForm(f=>({...f,is_admin:e.target.checked}))}/><label htmlFor="ia" style={{ fontSize: 13, color: "#888899", cursor: "pointer" }}>Admin-Rechte</label></div>
+      {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Benutzer manuell anlegen</div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Rolle</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}><option value="crew">Crew</option><option value="actor">Schauspieler</option><option value="admin">Admin</option></select></div>
+        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><input type="checkbox" id="ia" checked={form.is_admin} onChange={e=>setForm(f=>({...f,is_admin:e.target.checked}))}/><label htmlFor="ia" style={{ fontSize: 13, color: C.textMid, cursor: "pointer" }}>Admin-Rechte</label></div>
         <div style={{ ...S.card, padding: "10px 14px", marginBottom: 18, background: "rgba(99,102,241,0.06)" }}>
-          <div style={{ fontSize: 11, color: "#555570", marginBottom: 4 }}>Temporäres Passwort:</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: "#818CF8", letterSpacing: "1px" }}>{tempPw}</div>
-          <div style={{ fontSize: 11, color: "#444460", marginTop: 4 }}>In Supabase → Authentication → Add User eingeben.</div>
+          <div style={{ fontSize: 11, color: C.textDim, marginBottom: 4 }}>Temporäres Passwort:</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.accent, letterSpacing: "1px" }}>{tempPw}</div>
+          <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>In Supabase → Authentication → Add User eingeben.</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleCreate} disabled={saving}>{saving?"...":"Erstellen"}</button><button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button></div>
       </div></div>)}
@@ -1485,6 +1510,8 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("networks");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditNetModal, setShowEditNetModal] = useState(null); // network object to edit
+  const [editNetForm, setEditNetForm] = useState({ name: "", description: "", is_public: true });
   const [showInviteModal, setShowInviteModal] = useState(null);   // network object
   const [showAssignModal, setShowAssignModal] = useState(null);   // network object
   const [showApplyModal, setShowApplyModal] = useState(null);     // shoot object
@@ -1545,6 +1572,29 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
     setSaving(false);
   };
 
+  const handleEditNetwork = async () => {
+    if (!showEditNetModal || !editNetForm.name) return;
+    setSaving(true);
+    try {
+      await db.update("networks", { name: editNetForm.name, description: editNetForm.description, is_public: editNetForm.is_public }, `id=eq.${showEditNetModal.id}`);
+      setNetworks(p => p.map(n => n.id === showEditNetModal.id ? { ...n, ...editNetForm } : n));
+      setShowEditNetModal(null);
+    } catch(e) { alert(e.message); }
+    setSaving(false);
+  };
+
+  const handleDeleteNetwork = async (nw) => {
+    if (!confirm(`Netzwerk "${nw.name}" wirklich löschen? Alle Mitgliedschaften werden entfernt.`)) return;
+    try {
+      await db.remove("network_members", `network_id=eq.${nw.id}`);
+      await db.remove("shoot_network_links", `network_id=eq.${nw.id}`);
+      await db.remove("networks", `id=eq.${nw.id}`);
+      setNetworks(p => p.filter(n => n.id !== nw.id));
+      setAllMembers(p => p.filter(m => m.network_id !== nw.id));
+      setNetworkLinks(p => p.filter(l => l.network_id !== nw.id));
+    } catch(e) { alert(e.message); }
+  };
+
   const handleJoin = async (networkId) => {
     try {
       const mem = await db.insert("network_members", { network_id: networkId, user_id: user.id, role: "member", status: "pending" });
@@ -1586,6 +1636,18 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       const lnk = await db.insert("shoot_network_links", { shoot_id: shootId, network_id: networkId });
       setNetworkLinks(p => [...p, lnk]);
       setShoots(p => p.map(s => s.id === shootId ? { ...s, is_published: true } : s));
+      // Notify all active network members about new shoot
+      const shoot = shoots.find(s => s.id === shootId);
+      const nw = networks.find(n => n.id === networkId);
+      if (shoot && nw) {
+        const members = allMembers.filter(m => m.network_id === networkId && m.status === "active" && m.user_id !== user.id);
+        members.forEach(m => {
+          const member = users.find(u => u.id === m.user_id);
+          if (member?.email) {
+            notify("new_shoot_published", member.email, { shoot_title: shoot.title, network_name: nw.name, shoot_date: shoot.date_start || "", publisher_name: user.name });
+          }
+        });
+      }
     } catch(e) { alert(e.message); }
   };
 
@@ -1639,12 +1701,12 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
     ["requests",   `Anfragen${pendingTotal > 0 ? ` (${pendingTotal})` : ""}`],
   ];
 
-  const tabStyle = (id) => ({ padding: "9px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: tab===id?700:400, color: tab===id?C.accent:C.textDim, borderBottom: tab===id?`2px solid ${C.accent}`:"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" });
+  const tabStyle = (id) => ({ padding: "9px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: tab===id?700:400, color: tab===id?C.accent:C.textDim, borderBottom: tab===id?`2px solid ${C.accent}`:"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "inherit" });
 
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Netzwerk</div><div style={S.pageSub}>{myNetworks.length} Netzwerke · {publishedShoots.length} Ausschreibungen</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Netzwerk</div><div style={{ fontSize: 12, color: C.textDim }}>{myNetworks.length} Netzwerke · {publishedShoots.length} Ausschreibungen</div></div>
         <button style={S.btn("primary")} onClick={() => setShowCreateModal(true)}>＋ Netzwerk</button>
       </div>
 
@@ -1693,7 +1755,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
             const assignedLinks = networkLinks.filter(l => l.network_id === nw.id);
             const assignedShoots = shoots.filter(s => assignedLinks.some(l => l.shoot_id === s.id));
             return (
-              <div key={nw.id} style={S.card}>
+              <div key={nw.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{nw.name}</div>
@@ -1705,9 +1767,11 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
                     </div>
                   </div>
                   {isNwAdmin && (
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: 6, flexWrap:"wrap" }}>
                       <button style={S.btn("outline")} onClick={() => setShowInviteModal(nw)}>＋ Einladen</button>
-                      <button style={S.btn("ghost")} onClick={() => setShowAssignModal(nw)}>📢 Shoot zuweisen</button>
+                      <button style={S.btn("ghost")} onClick={() => setShowAssignModal(nw)}>📢 Shoot</button>
+                      <button style={S.btn("ghost")} onClick={() => { setEditNetForm({ name: nw.name, description: nw.description||"", is_public: nw.is_public }); setShowEditNetModal(nw); }}>✏️</button>
+                      {(nw.created_by === user.id || user.is_admin) && <button style={S.btn("danger")} onClick={() => handleDeleteNetwork(nw)}>🗑</button>}
                     </div>
                   )}
                 </div>
@@ -1783,7 +1847,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
               const appCount   = shootApps.filter(a => a.shoot_id === shoot.id && a.status === "pending").length;
               const sc = STATUS_CONFIG[shoot.status] || STATUS_CONFIG.planned;
               return (
-                <div key={shoot.id} style={S.card}>
+                <div key={shoot.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 200 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>{shoot.title}</div>
@@ -1889,17 +1953,31 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       )}
 
       {/* ── CREATE NETWORK MODAL ── */}
-      {showCreateModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Netzwerk erstellen</div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>Name *</label><input style={S.input} value={networkForm.name} onChange={e=>setNetworkForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Starantor Crew"/></div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>Beschreibung</label><textarea style={S.textarea} value={networkForm.description} onChange={e=>setNetworkForm(f=>({...f,description:e.target.value}))}/></div>
+      {showCreateModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Netzwerk erstellen</div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={networkForm.name} onChange={e=>setNetworkForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Starantor Crew"/></div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={networkForm.description} onChange={e=>setNetworkForm(f=>({...f,description:e.target.value}))}/></div>
         <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}><input type="checkbox" id="pub" checked={networkForm.is_public} onChange={e=>setNetworkForm(f=>({...f,is_public:e.target.checked}))}/><label htmlFor="pub" style={{ fontSize: 12, color: C.textMid, cursor: "pointer" }}>Öffentlich sichtbar</label></div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleCreateNetwork} disabled={saving}>{saving?"...":"Erstellen"}</button><button style={S.btn("ghost")} onClick={()=>setShowCreateModal(false)}>Abbrechen</button></div>
       </div></div>)}
 
       {/* ── INVITE MODAL ── */}
-      {showInviteModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Einladen — {showInviteModal.name}</div>
+      {showEditNetModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Netzwerk bearbeiten</div>
+        <div style={{ marginBottom:12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={editNetForm.name} onChange={e=>setEditNetForm(f=>({...f,name:e.target.value}))} /></div>
+        <div style={{ marginBottom:12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={editNetForm.description} onChange={e=>setEditNetForm(f=>({...f,description:e.target.value}))} /></div>
+        <div style={{ marginBottom:18, display:"flex", alignItems:"center", gap:10 }}>
+          <input type="checkbox" checked={editNetForm.is_public} onChange={e=>setEditNetForm(f=>({...f,is_public:e.target.checked}))} id="editNetPublic" />
+          <label htmlFor="editNetPublic" style={{ fontSize:13, color:C.text, cursor:"pointer" }}>Öffentlich (auffindbar für alle)</label>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button style={S.btn("primary")} onClick={handleEditNetwork} disabled={saving}>{saving?"...":"Speichern"}</button>
+          <button style={S.btn("ghost")} onClick={()=>setShowEditNetModal(null)}>Abbrechen</button>
+        </div>
+      </div></div>)}
+
+      {showInviteModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Einladen — {showInviteModal.name}</div>
         <div style={{ fontSize: 11, color: C.textDim, marginBottom: 12 }}>Alle freigegebenen User:</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto", marginBottom: 14 }}>
           {users.filter(u => u.is_approved).map(u => {
@@ -1918,8 +1996,8 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       </div></div>)}
 
       {/* ── ASSIGN SHOOT MODAL ── */}
-      {showAssignModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Shoot ausschreiben — {showAssignModal.name}</div>
+      {showAssignModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Shoot ausschreiben — {showAssignModal.name}</div>
         <div style={{ fontSize: 11, color: C.textDim, marginBottom: 12 }}>Wähle einen Shoot zum Ausschreiben:</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto", marginBottom: 14 }}>
           {shoots.filter(s => s.created_by === user.id || user.is_admin).map(s => {
@@ -1943,10 +2021,10 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       </div></div>)}
 
       {/* ── APPLY MODAL ── */}
-      {showApplyModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Anfrage senden — {showApplyModal.title}</div>
-        <div style={{ marginBottom: 12 }}><label style={S.label}>Gewünschte Rolle</label><input style={S.input} value={applyRole} onChange={e=>setApplyRole(e.target.value)} placeholder="z. B. Kameramann, Schauspieler, Gaffer..."/></div>
-        <div style={{ marginBottom: 18 }}><label style={S.label}>Nachricht (optional)</label><textarea style={S.textarea} value={applyMsg} onChange={e=>setApplyMsg(e.target.value)} placeholder="Kurze Vorstellung, Erfahrung..."/></div>
+      {showApplyModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Anfrage senden — {showApplyModal.title}</div>
+        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Gewünschte Rolle</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={applyRole} onChange={e=>setApplyRole(e.target.value)} placeholder="z. B. Kameramann, Schauspieler, Gaffer..."/></div>
+        <div style={{ marginBottom: 18 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Nachricht (optional)</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={applyMsg} onChange={e=>setApplyMsg(e.target.value)} placeholder="Kurze Vorstellung, Erfahrung..."/></div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleApply}>Anfrage senden</button><button style={S.btn("ghost")} onClick={()=>setShowApplyModal(null)}>Abbrechen</button></div>
       </div></div>)}
     </div>
@@ -2001,26 +2079,26 @@ function ProfilePage({ user, setUser }) {
 
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Mein Profil</div><div style={S.pageSub}>{user.email}</div></div>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Mein Profil</div><div style={{ fontSize: 12, color: C.textDim }}>{user.email}</div></div>
       </div>
-      <div style={S.grid2}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
         {/* Name */}
-        <div style={S.card}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 14 }}>Benutzername ändern</div>
-          <div style={{ marginBottom: 12 }}><label style={S.label}>Anzeigename</label><input style={S.input} value={nameForm.name} onChange={e=>setNameForm(f=>({...f,name:e.target.value}))}/></div>
-          <div style={{ marginBottom: 12 }}><label style={S.label}>E-Mail</label><input style={{ ...S.input, color: C.textDim }} value={user.email} readOnly/></div>
+          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Anzeigename</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={nameForm.name} onChange={e=>setNameForm(f=>({...f,name:e.target.value}))}/></div>
+          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ ...S.input, color: C.textDim }} value={user.email} readOnly/></div>
           {nameMsg && <div style={{ fontSize: 11, color: C.green, marginBottom: 10 }}>{nameMsg}</div>}
           <button style={S.btn("primary")} onClick={handleSaveName} disabled={saving}>Speichern</button>
         </div>
 
         {/* Password */}
-        <div style={S.card}>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 14 }}>Passwort ändern</div>
-          <div style={{ marginBottom: 10 }}><label style={S.label}>Aktuelles Passwort</label><input style={S.input} type="password" value={pwForm.current} onChange={e=>setPwForm(f=>({...f,current:e.target.value}))}/></div>
-          <div style={{ marginBottom: 10 }}><label style={S.label}>Neues Passwort</label><input style={S.input} type="password" placeholder="Min. 8 Zeichen" value={pwForm.newPw} onChange={e=>setPwForm(f=>({...f,newPw:e.target.value}))}/></div>
-          <div style={{ marginBottom: 14 }}><label style={S.label}>Wiederholen</label><input style={S.input} type="password" value={pwForm.confirm} onChange={e=>setPwForm(f=>({...f,confirm:e.target.value}))}/></div>
-          {pwErr && <div style={S.err}>{pwErr}</div>}
+          <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Aktuelles Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pwForm.current} onChange={e=>setPwForm(f=>({...f,current:e.target.value}))}/></div>
+          <div style={{ marginBottom: 10 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Neues Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" placeholder="Min. 8 Zeichen" value={pwForm.newPw} onChange={e=>setPwForm(f=>({...f,newPw:e.target.value}))}/></div>
+          <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Wiederholen</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pwForm.confirm} onChange={e=>setPwForm(f=>({...f,confirm:e.target.value}))}/></div>
+          {pwErr && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{pwErr}</div>}
           {pwMsg && <div style={{ fontSize: 11, color: C.green, marginBottom: 10 }}>{pwMsg}</div>}
           <button style={S.btn("primary")} onClick={handleSavePw} disabled={saving}>Passwort ändern</button>
         </div>
@@ -2127,13 +2205,13 @@ function MarketplacePage({ user, users, userEquipment }) {
   const filtered = listings.filter(l => l.is_available && l.owner_id !== user.id && (!search || l.name?.toLowerCase().includes(search.toLowerCase()) || l.category?.toLowerCase().includes(search.toLowerCase())));
 
   const tabs = [["browse","Marktplatz"],["my-listings","Meine Inserate"],["requests",`Anfragen${myIncomingRequests.length > 0 ? ` (${myIncomingRequests.length})` : ""}`]];
-  const tabStyle = (id) => ({ padding: "9px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: tab===id?700:400, color: tab===id?C.accent:C.textDim, borderBottom: tab===id?`2px solid ${C.accent}`:"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "'IBM Plex Mono',monospace" });
+  const tabStyle = (id) => ({ padding: "9px 16px", border: "none", background: "none", cursor: "pointer", fontSize: 11, fontWeight: tab===id?700:400, color: tab===id?C.accent:C.textDim, borderBottom: tab===id?`2px solid ${C.accent}`:"2px solid transparent", marginBottom: -1, whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase", fontFamily: "inherit" });
 
   return (
     <div>
-      <div style={S.pageHeader}>
-        <div><div style={S.pageTitle}>Equipment-Marktplatz</div><div style={S.pageSub}>{listings.filter(l => l.is_available).length} verfügbare Inserate</div></div>
-        <button style={S.btn("primary")} onClick={() => { setForm({ name: "", category: "", description: "", daily_rate: "", weekly_rate: "", location: "", contact_info: "" }); setShowEquipPicker(true); }}>＋ Equipment vermieten</button>
+      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Equipment-Marktplatz</div><div style={{ fontSize: 12, color: C.textDim }}>{listings.filter(l => l.is_available).length} verfügbare Inserate</div></div>
+        <button style={S.btn("primary")} onClick={() => { setForm({ name: "", category: "", description: "", daily_rate: "", weekly_rate: "", location: "", contact_info: "" }); setShowAddModal(true); }}>＋ Equipment vermieten</button>
       </div>
 
       <div style={{ display: "flex", gap: 0, marginBottom: 20, borderBottom: `1px solid ${C.border}`, overflowX: "auto" }}>
@@ -2152,14 +2230,14 @@ function MarketplacePage({ user, users, userEquipment }) {
               const owner = users.find(u => u.id === lst.owner_id) || { name: "?" };
               const myReq = requests.find(r => r.listing_id === lst.id && r.requester_id === user.id);
               return (
-                <div key={lst.id} style={S.card}>
+                <div key={lst.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 2 }}>{lst.name}</div>
                       {lst.category && <span style={S.tag(C.purple)}>{lst.category}</span>}
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: C.accent, fontFamily: "'IBM Plex Mono',monospace" }}>CHF {(parseFloat(lst.daily_rate)||0).toFixed(0)}/Tag</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: C.accent, fontFamily: "inherit" }}>CHF {(parseFloat(lst.daily_rate)||0).toFixed(0)}/Tag</div>
                       {lst.weekly_rate > 0 && <div style={{ fontSize: 10, color: C.textDim }}>CHF {(parseFloat(lst.weekly_rate)||0).toFixed(0)}/Woche</div>}
                     </div>
                   </div>
@@ -2263,8 +2341,8 @@ function MarketplacePage({ user, users, userEquipment }) {
       )}
 
       {/* ── ADD LISTING MODAL ── */}
-      {showAddModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Equipment vermieten</div>
+      {showAddModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Equipment vermieten</div>
         {userEquipment && userEquipment.length > 0 && !showEquipPicker && (
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Aus meinem Equipment übernehmen:</div>
@@ -2279,32 +2357,32 @@ function MarketplacePage({ user, users, userEquipment }) {
           </div>
         )}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Bezeichnung *</label><input style={S.input} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony FX3, Aputure 600D..."/></div>
-          <div><label style={S.label}>Kategorie</label><input style={S.input} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton..."/></div>
-          <div><label style={S.label}>Standort</label><input style={S.input} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="z. B. Zürich"/></div>
-          <div><label style={S.label}>CHF / Tag *</label><input style={S.input} type="number" value={form.daily_rate} onChange={e=>setForm(f=>({...f,daily_rate:e.target.value}))} placeholder="0.00"/></div>
-          <div><label style={S.label}>CHF / Woche</label><input style={S.input} type="number" value={form.weekly_rate} onChange={e=>setForm(f=>({...f,weekly_rate:e.target.value}))} placeholder="0.00"/></div>
-          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Beschreibung</label><textarea style={S.textarea} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Zubehör, Zustand, Besonderheiten..."/></div>
-          <div style={{ gridColumn: "1/-1" }}><label style={S.label}>Kontakt (Tel / E-Mail)</label><input style={S.input} value={form.contact_info} onChange={e=>setForm(f=>({...f,contact_info:e.target.value}))} placeholder="Wird nur bei Anfrage angezeigt"/></div>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Bezeichnung *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="z. B. Sony FX3, Aputure 600D..."/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kategorie</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))} placeholder="Kamera, Licht, Ton..."/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Standort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="z. B. Zürich"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>CHF / Tag *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={form.daily_rate} onChange={e=>setForm(f=>({...f,daily_rate:e.target.value}))} placeholder="0.00"/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>CHF / Woche</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={form.weekly_rate} onChange={e=>setForm(f=>({...f,weekly_rate:e.target.value}))} placeholder="0.00"/></div>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Zubehör, Zustand, Besonderheiten..."/></div>
+          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kontakt (Tel / E-Mail)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.contact_info} onChange={e=>setForm(f=>({...f,contact_info:e.target.value}))} placeholder="Wird nur bei Anfrage angezeigt"/></div>
         </div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleAddListing} disabled={saving}>{saving?"...":"Inserat erstellen"}</button><button style={S.btn("ghost")} onClick={()=>setShowAddModal(false)}>Abbrechen</button></div>
       </div></div>)}
 
       {/* ── REQUEST MODAL ── */}
-      {showRequestModal && (<div style={S.modal}><div style={S.modalBox}>
-        <div style={S.modalTitle}>Anfrage — {showRequestModal.name}</div>
+      {showRequestModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
+        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Anfrage — {showRequestModal.name}</div>
         <div style={{ ...S.card, padding: "10px 14px", marginBottom: 16, background: C.accentDim, borderLeft: `2px solid ${C.accent}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>CHF {(parseFloat(showRequestModal.daily_rate)||0).toFixed(0)} / Tag</div>
           {showRequestModal.weekly_rate > 0 && <div style={{ fontSize: 11, color: C.textDim }}>CHF {(parseFloat(showRequestModal.weekly_rate)||0).toFixed(0)} / Woche</div>}
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-          <div><label style={S.label}>Von</label><input style={S.input} type="date" value={reqForm.date_from} onChange={e=>setReqForm(f=>({...f,date_from:e.target.value}))}/></div>
-          <div><label style={S.label}>Bis</label><input style={S.input} type="date" value={reqForm.date_to} onChange={e=>setReqForm(f=>({...f,date_to:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Von</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={reqForm.date_from} onChange={e=>setReqForm(f=>({...f,date_from:e.target.value}))}/></div>
+          <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Bis</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="date" value={reqForm.date_to} onChange={e=>setReqForm(f=>({...f,date_to:e.target.value}))}/></div>
         </div>
-        {reqForm.date_from && <div style={{ fontSize: 11, color: C.accent, fontFamily: "'IBM Plex Mono',monospace", marginBottom: 10 }}>
+        {reqForm.date_from && <div style={{ fontSize: 11, color: C.accent, fontFamily: "inherit", marginBottom: 10 }}>
           {(() => { const days = reqForm.date_to ? Math.max(1, Math.round((new Date(reqForm.date_to) - new Date(reqForm.date_from)) / 86400000) + 1) : 1; return `${days} Tag${days !== 1 ? "e" : ""} × CHF ${(parseFloat(showRequestModal.daily_rate)||0).toFixed(0)} = CHF ${((parseFloat(showRequestModal.daily_rate)||0) * days).toFixed(0)}`; })()}
         </div>}
-        <div style={{ marginBottom: 16 }}><label style={S.label}>Nachricht (optional)</label><textarea style={S.textarea} value={reqForm.message} onChange={e=>setReqForm(f=>({...f,message:e.target.value}))} placeholder="Kurze Beschreibung des Projekts..."/></div>
+        <div style={{ marginBottom: 16 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Nachricht (optional)</label><textarea style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" }} value={reqForm.message} onChange={e=>setReqForm(f=>({...f,message:e.target.value}))} placeholder="Kurze Beschreibung des Projekts..."/></div>
         <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleSendRequest}>Anfrage senden</button><button style={S.btn("ghost")} onClick={()=>setShowRequestModal(null)}>Abbrechen</button></div>
       </div></div>)}
     </div>
@@ -2390,14 +2468,14 @@ export default function App() {
   const visibleShoots = user.is_admin ? shoots : shoots.filter(s => myIds.includes(s.id) || s.created_by === user.id);
 
   const content = loading ? (
-    <div style={{ textAlign: "center", padding: 60, color: C.textDim, fontFamily: "'IBM Plex Mono',monospace", fontSize: 12 }}>Loading...</div>
+    <div style={{ textAlign: "center", padding: 60, color: C.textDim, fontFamily: "inherit", fontSize: 12 }}>Loading...</div>
   ) : (
     <>
       {page === "dashboard" && <Dashboard user={user} shoots={visibleShoots} participants={participants} setPage={setPage} setSelectedShoot={setSelectedShoot} />}
       {page === "shoots" && <ShootsList user={user} shoots={shoots} participants={participants} clients={clients} setPage={setPage} setSelectedShoot={setSelectedShoot} />}
-      {page === "calendar" && (<div><div style={S.pageHeader}><div><div style={S.pageTitle}>Kalender</div></div></div><CalendarView shoots={visibleShoots} user={user} setSelectedShoot={setSelectedShoot} setPage={setPage} /></div>)}
+      {page === "calendar" && (<div><div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}><div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Kalender</div></div></div><CalendarView shoots={visibleShoots} user={user} setSelectedShoot={setSelectedShoot} setPage={setPage} /></div>)}
       {page === "clients" && <ClientsPage user={user} />}
-      {page === "actors" && <ActorsPage user={user} />}
+      {page === "actors" && user.is_admin && <ActorsPage user={user} />}
       {page === "my-equipment" && <MyEquipmentPage user={user} userEquipment={userEquipment} setUserEquipment={setUserEquipment} />}
       {page === "network" && <NetworkPage user={user} users={users} setShoots={setShoots} shoots={shoots} participants={participants} setParticipants={setParticipants} />}
       {page === "marketplace" && <MarketplacePage user={user} users={users} userEquipment={userEquipment} />}
@@ -2410,7 +2488,23 @@ export default function App() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } body { margin: 0; background: #0D0D0D; font-family: 'IBM Plex Mono', monospace; } input:focus,textarea:focus,select:focus { border-color: #E8FF47 !important; box-shadow: 0 0 0 2px rgba(232,255,71,0.1); } ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-track { background: #0D0D0D; } ::-webkit-scrollbar-thumb { background: #333; } button:hover { opacity: 0.82; } a:hover { opacity: 0.75; } ::selection { background: #E8FF47; color: #000; }`}</style>
+{(() => {
+        const isDark = _themeMode === 'dark';
+        return <style>{`
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { margin: 0; background: ${C.bg}; font-family: -apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',system-ui,sans-serif; -webkit-font-smoothing: antialiased; color: ${C.text}; transition: background 0.25s, color 0.25s; }
+          input, textarea, select, button { font-family: inherit; }
+          input:focus, textarea:focus, select:focus { outline: none; border-color: ${C.accent} !important; box-shadow: 0 0 0 3px ${C.accentDim}; }
+          ::-webkit-scrollbar { width: 6px; height: 6px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
+          button:hover { opacity: 0.85; }
+          a:hover { opacity: 0.75; }
+          ::selection { background: ${C.accent}; color: ${isDark ? '#000' : '#fff'}; }
+          @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+          .fadeIn { animation: fadeIn 0.2s ease; }
+        `}</style>;
+      })()}
       <Layout page={page} setPage={setPage} user={user} onLogout={handleLogout}>{content}</Layout>
     </>
   );
