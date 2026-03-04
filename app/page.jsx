@@ -51,21 +51,21 @@ const db = {
 };
 
 const STATUS_CONFIG = {
-  planned:   { label: "Geplant",   color: C.amber, bg: "rgba(245,158,11,0.12)",  dot: C.amber },
-  confirmed: { label: "Bestätigt", color: "#10B981", bg: "rgba(16,185,129,0.12)", dot: "#10B981" },
-  cancelled: { label: "Abgesagt",  color: "#EF4444", bg: "rgba(239,68,68,0.12)",  dot: "#EF4444" },
+  planned:   { label: "Geplant",   color: "#FF9F0A", bg: "rgba(255,159,10,0.15)",  dot: "#FF9F0A" },
+  confirmed: { label: "Bestätigt", color: "#30D158", bg: "rgba(48,209,88,0.15)", dot: "#30D158" },
+  cancelled: { label: "Abgesagt",  color: "#FF453A", bg: "rgba(255,69,58,0.15)",  dot: "#FF453A" },
 };
 const ATTEND_CONFIG = {
-  confirmed: { label: "Bestätigt", color: "#10B981", bg: "rgba(16,185,129,0.15)" },
-  open:      { label: "Offen",     color: "#6B7280", bg: "rgba(107,114,128,0.15)" },
-  sick:      { label: "Krank",     color: "#EF4444", bg: "rgba(239,68,68,0.15)" },
-  absent:    { label: "Abwesend",  color: "#8B5CF6", bg: "rgba(139,92,246,0.15)" },
+  confirmed: { label: "Bestätigt", color: "#30D158", bg: "rgba(48,209,88,0.15)" },
+  open:      { label: "Offen",     color: "#8E8E93", bg: "rgba(142,142,147,0.15)" },
+  sick:      { label: "Krank",     color: "#FF453A", bg: "rgba(255,69,58,0.15)" },
+  absent:    { label: "Abwesend",  color: "#BF5AF2", bg: "rgba(191,90,242,0.15)" },
 };
-const SHOT_STATUS = { open: { label: "Offen", color: "#6B7280" }, in_progress: { label: "In Arbeit", color: C.amber }, done: { label: "Erledigt", color: "#10B981" } };
+const SHOT_STATUS = { open: { label: "Offen", color: "#6B7280" }, in_progress: { label: "In Arbeit", color: "#FF9F0A" }, done: { label: "Erledigt", color: "#30D158" } };
 const ROLE_CONFIG = {
-  admin:  { label: "Admin",        color: C.amber },
-  crew:   { label: "Crew",         color: C.accent },
-  actor:  { label: "Schauspieler", color: "#10B981" },
+  admin:  { label: "Admin",        color: "#FF9F0A" },
+  crew:   { label: "Crew",         color: "#0A84FF" },
+  actor:  { label: "Schauspieler", color: "#30D158" },
 };
 const GENRES = ["Action","Comedy","Drama","Horror","Romance","Thriller","Documentary","Commercial","Music Video","Other"];
 const fmt = (d) => d ? new Date(d + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
@@ -89,7 +89,7 @@ function exportToICS(shoots) {
 // ============================================================
 
 // ── Apple-style Design System with Dark/Light mode ──────────
-const THEMES = {
+var THEMES = {
   dark: {
     bg:"#000000", surface:"#1C1C1E", surfaceHi:"#2C2C2E", border:"#38383A", borderHi:"#48484A",
     accent:"#0A84FF", accentDim:"rgba(10,132,255,0.12)",
@@ -113,24 +113,24 @@ const THEMES = {
 };
 // Use a proxy-like object so S can reference C properties dynamically
 // even before C values are set (avoids TDZ in production bundles)
-const _themeDefaults = THEMES.dark;
+var _themeDefaults = THEMES.dark;
 // eslint-disable-next-line prefer-const
-let _themeMode = "dark";
+var _themeMode = "dark";
 // SSR-safe localStorage read
 if (typeof window !== "undefined") {
   try { const saved = localStorage.getItem("sp_theme"); if (saved) _themeMode = saved; } catch(e) {}
 }
 // C is a plain object — reassigned on theme change via Object.assign
-const C = Object.assign({}, THEMES[_themeMode]);
-function getC() { return C; }
+var C = Object.assign({}, THEMES[_themeMode]);
+var getC = function() { return C; };
 
-const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
+var isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
 
 // Helper: re-evaluates styles with current C (needed after theme switch)
-const mk = (fn) => fn();
+var mk = (fn) => fn();
 
 // S — only function-based helpers that read C at call time (SSR-safe)
-const S = {
+var S = {
   // Functions that read C dynamically at call time — safe for SSR
   sidebar: (open) => ({ width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto", transform: open ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)" }),
   navItem: (a) => ({ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 8, cursor: "pointer", background: a ? C.accentDim : "transparent", color: a ? C.accent : C.textMid, fontSize: 13, fontWeight: a ? 600 : 400, transition: "background 0.12s", border: "none", width: "100%", textAlign: "left", fontFamily: "inherit" }),
