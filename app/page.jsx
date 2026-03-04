@@ -129,36 +129,12 @@ const isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
 // Helper: re-evaluates styles with current C (needed after theme switch)
 const mk = (fn) => fn();
 
+// S — only function-based helpers that read C at call time (SSR-safe)
 const S = {
-  root: { fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text',system-ui,sans-serif", background: C.bg, color: C.text, minHeight: "100vh", transition: "background 0.25s,color 0.25s" },
-
-  // ── Sidebar ─────────────────────────────────────────────────
+  // Functions that read C dynamically at call time — safe for SSR
   sidebar: (open) => ({ width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto", transform: open ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)" }),
-  sidebarDesktop: { width: 240, minHeight: "100vh", background: C.surface, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200, overflowY: "auto" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 150, backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" },
-
-  logo: { padding: "18px 16px 14px", borderBottom: `1px solid ${C.border}` },
-  logoMark: { display: "flex", alignItems: "center", gap: 10 },
-  logoIcon: { width: 30, height: 30, background: C.accent, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 },
-  logoText: { fontSize: 15, fontWeight: 700, letterSpacing: "-0.02em", color: C.text },
-  logoSub:  { fontSize: 10, color: C.textDim, marginTop: 1 },
-  nav: { padding: "8px 10px", flex: 1, display: "flex", flexDirection: "column", gap: 2 },
-  navSection: { fontSize: 10, fontWeight: 600, color: C.textDim, letterSpacing: "0.05em", textTransform: "uppercase", padding: "14px 8px 4px" },
   navItem: (a) => ({ display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", borderRadius: 8, cursor: "pointer", background: a ? C.accentDim : "transparent", color: a ? C.accent : C.textMid, fontSize: 13, fontWeight: a ? 600 : 400, transition: "background 0.12s", border: "none", width: "100%", textAlign: "left", fontFamily: "inherit" }),
-  navIcon: { fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 },
-  sidebarUser: { padding: "12px 16px", borderTop: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 },
   avatar: (sz = 32) => ({ width: sz, height: sz, borderRadius: "50%", background: C.accentDim, border: `2px solid ${C.accent}33`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.max(sz * 0.38, 10), fontWeight: 700, color: C.accent, flexShrink: 0 }),
-
-  topbar: { display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", background: C.surface, borderBottom: `1px solid ${C.border}`, position: "sticky", top: 0, zIndex: 100 },
-  main: { flex: 1, padding: "20px 16px", maxWidth: "100%", boxSizing: "border-box" },
-  mainDesktop: { marginLeft: 240, flex: 1, padding: "32px 36px", maxWidth: "calc(100vw - 240px)", boxSizing: "border-box" },
-
-  // ── Page layout ─────────────────────────────────────────────
-  pageHeader: { marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 },
-  pageTitle:  { fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 },
-  pageSub:    { fontSize: 12, color: C.textDim },
-
-  // ── Buttons ─────────────────────────────────────────────────
   btn: (v = "primary") => ({
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "9px 16px", borderRadius: 10,
@@ -168,18 +144,6 @@ const S = {
     fontSize: 13, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "inherit",
     boxShadow: v === "primary" ? `0 1px 3px ${C.accent}55` : "none",
   }),
-
-  // ── Cards ────────────────────────────────────────────────────
-  card:     { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow },
-  cardHover:{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", cursor: "pointer", transition: "background 0.12s", boxShadow: C.shadow },
-  statCard: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow },
-  statValue:{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text },
-  statLabel:{ fontSize: 11, color: C.textDim, marginTop: 4 },
-
-  grid2: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 },
-  grid3: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10 },
-
-  // ── Badges ───────────────────────────────────────────────────
   badge: (s) => {
     const map = { planned:{color:C.amber,bg:C.amberDim}, confirmed:{color:C.green,bg:C.greenDim}, cancelled:{color:C.textMid,bg:C.surfaceHi} };
     const t = map[s] || map.cancelled;
@@ -195,26 +159,10 @@ const S = {
     const t = map[r] || map.crew;
     return { display:"inline-flex", alignItems:"center", padding:"2px 8px", borderRadius:20, fontSize:10, fontWeight:600, color:t.color, background:t.bg };
   },
-
-  // ── Forms ────────────────────────────────────────────────────
-  input:    { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" },
-  textarea: { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", resize: "vertical", minHeight: 80, fontFamily: "inherit" },
-  select:   { background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" },
-  label:    { fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" },
-
-  // ── Modals ───────────────────────────────────────────────────
-  modal:     { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" },
-  modalBox:  { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" },
-  modalTitle:{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text },
-
-  // ── Misc ─────────────────────────────────────────────────────
-  tag:      (color = C.accent) => ({ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, color, background:color+"1E" }),
-  toggle:   (a) => ({ padding:"7px 14px", borderRadius:8, border:"none", background:a?C.surfaceHi:"transparent", color:a?C.text:C.textDim, fontSize:12, fontWeight:a?600:400, cursor:"pointer", fontFamily:"inherit" }),
-  err:      { fontSize:12, color:C.danger, padding:"10px 13px", background:C.dangerDim, borderRadius:10, marginBottom:12, borderLeft:`3px solid ${C.danger}` },
-  driveBtn: { display:"inline-flex", alignItems:"center", gap:8, padding:"8px 14px", borderRadius:10, border:`1px solid ${C.border}`, background:C.surfaceHi, color:C.textMid, fontSize:12, fontWeight:600, cursor:"pointer", textDecoration:"none" },
-  divider:  { height:1, background:C.border, margin:"16px 0" },
-  hamburger:{ background:"none", border:"none", color:C.text, cursor:"pointer", fontSize:20, padding:"4px", display:"flex", alignItems:"center" },
+  tag: (color) => ({ display:"inline-block", padding:"2px 9px", borderRadius:20, fontSize:10, fontWeight:600, background:(color||C.accent)+"1E", color:(color||C.accent) }),
+  toggle: (a) => ({ padding:"7px 14px", borderRadius:8, border:"none", background:a?C.surfaceHi:"transparent", color:a?C.text:C.textDim, fontSize:12, fontWeight:a?600:400, cursor:"pointer", fontFamily:"inherit" }),
 };
+
 
 // ============================================================
 // HOOKS
@@ -280,7 +228,7 @@ function AuthPage({ onLogin }) {
           <button style={{ ...S.toggle(mode === "register"), flex: 1, borderRadius: 6 }} onClick={() => { setMode("register"); setError(""); setSuccess(""); }}>Registrieren</button>
         </div>
 
-        <div style={{ ...S.card, padding: 24 }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24 }}>
           {success && <div style={{ fontSize: 13, color: "#10B981", padding: "10px 12px", background: "rgba(16,185,129,0.08)", borderRadius: 6, marginBottom: 14 }}>{success}</div>}
           {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
 
@@ -318,7 +266,7 @@ function ChangePasswordPage({ user, onDone }) {
           <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 6 }}>ShootPlan</div>
           <div style={{ fontSize: 18, fontWeight: 700, color: C.text, letterSpacing: "-0.01em" }}>Neues Passwort setzen</div>
         </div>
-        <div style={{ ...S.card, padding: 24 }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24 }}>
           <div style={{ marginBottom: 14 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Neues Passwort</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pw} onChange={e => setPw(e.target.value)} /></div>
           <div style={{ marginBottom: 18 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Wiederholen</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="password" value={pw2} onChange={e => setPw2(e.target.value)} /></div>
           {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
@@ -390,7 +338,7 @@ function Layout({ page, setPage, user, onLogout, children }) {
           : <div key={item.id} style={S.navItem(page === item.id || page.startsWith(item.id + "-"))} onClick={() => { setPage(item.id); setSidebarOpen(false); }}><span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{item.icon}</span><span>{item.label}</span></div>
         )}
       </div>
-      <div style={{...S.sidebarUser, flexDirection:"column", gap:10, padding:"14px 16px"}}>
+      <div style={{padding:"12px 16px", borderTop:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:10, flexDirection:"column", gap:10, padding:"14px 16px"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,width:"100%"}}>
           <div style={S.avatar(32)}>{user.name?.[0]}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -445,7 +393,7 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
         <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Guten Tag, {user.name?.split(" ")[0]} 👋</div><div style={{ fontSize: 12, color: C.textDim }}>{now.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}</div></div>
         <button style={S.btn("primary")} onClick={() => setPage("new-shoot")}>＋ Neuer Shoot</button>
       </div>
-      <div style={{ ...S.grid3, marginBottom: 24 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:10, marginBottom: 24 }}>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{upcoming.length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Bevorstehend</div></div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{visible.filter(s => s.status === "confirmed").length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Bestätigt</div></div>
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "18px 20px", boxShadow: C.shadow }}><div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{visible.filter(s => { const d = new Date(s.date_start); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); }).length}</div><div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Diesen Monat</div></div>
@@ -457,7 +405,7 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
           const myP = sp.find(p => p.user_id === user.id);
           const sc = STATUS_CONFIG[shoot.status] || STATUS_CONFIG.planned;
           return (
-            <div key={shoot.id} style={{ ...S.cardHover, display: "flex", alignItems: "center", gap: 12 }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
+            <div key={shoot.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 18px", cursor:"pointer", transition:"background 0.12s", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12 }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
               <div style={{ width: 4, height: 44, borderRadius: 2, background: sc.color, flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>{shoot.title}</div>
@@ -470,7 +418,7 @@ function Dashboard({ user, shoots, participants, setPage, setSelectedShoot }) {
             </div>
           );
         })}
-        {upcoming.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 32, marginBottom: 10 }}>🎬</div><div>Keine bevorstehenden Shoots</div><button style={{ ...S.btn("primary"), marginTop: 14 }} onClick={() => setPage("new-shoot")}>Ersten Shoot erstellen</button></div>}
+        {upcoming.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 32, marginBottom: 10 }}>🎬</div><div>Keine bevorstehenden Shoots</div><button style={{ ...S.btn("primary"), marginTop: 14 }} onClick={() => setPage("new-shoot")}>Ersten Shoot erstellen</button></div>}
       </div>
     </div>
   );
@@ -507,7 +455,7 @@ function CalendarView({ shoots, user, setSelectedShoot, setPage }) {
           <button style={S.btn("outline")} onClick={() => setDate(new Date(year, month+1, 1))}>›</button>
         </div>
       </div>
-      <div style={{ ...S.card, padding: 12 }}>
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 12 }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 1, marginBottom: 6 }}>
           {["Mo","Di","Mi","Do","Fr","Sa","So"].map(d => <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: C.textDim, padding: "3px 0" }}>{d}</div>)}
         </div>
@@ -541,7 +489,7 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-        <input style={{ ...S.input, maxWidth: 220 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", maxWidth: 220 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />
         <button style={S.btn("outline")} onClick={() => exportToICS(sorted)}>📥 .ics</button>
         <div style={{ background: "#111118", border: "1px solid #1E1E2E", borderRadius: 8, padding: 3, display: "flex" }}>
           <button style={S.toggle(view === "list")} onClick={() => setView("list")}>☰</button>
@@ -562,7 +510,7 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
             const client = clients.find(c => c.id === shoot.client_id);
             const isMultiDay = shoot.date_end && shoot.date_end !== shoot.date_start;
             return (
-              <div key={shoot.id} style={{ ...S.cardHover, display: "flex", gap: 12, alignItems: "center" }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
+              <div key={shoot.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"14px 18px", cursor:"pointer", transition:"background 0.12s", boxShadow:C.shadow, display: "flex", gap: 12, alignItems: "center" }} onClick={() => { setSelectedShoot(shoot); setPage("shoot-detail"); }}>
                 <div style={{ minWidth: 44, textAlign: "center" }}>
                   <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>{new Date(shoot.date_start + "T12:00:00").getDate().toString().padStart(2,"0")}</div>
                   <div style={{ fontSize: 10, color: C.textDim, textTransform: "uppercase" }}>{new Date(shoot.date_start + "T12:00:00").toLocaleString("de-DE",{month:"short"})}</div>
@@ -580,7 +528,7 @@ function ShootsList({ user, shoots, participants, clients, setPage, setSelectedS
               </div>
             );
           })}
-          {sorted.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>🎬</div><div>Keine Shoots gefunden</div><button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setPage("new-shoot")}>Erstellen</button></div>}
+          {sorted.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>🎬</div><div>Keine Shoots gefunden</div><button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setPage("new-shoot")}>Erstellen</button></div>}
         </div>
       ) : <CalendarView shoots={sorted} user={user} setSelectedShoot={setSelectedShoot} setPage={setPage} />}
     </div>
@@ -679,7 +627,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap" }}>
         <button style={{ ...S.btn("ghost"), padding: "7px 10px" }} onClick={() => setPage("shoots")}>← Zurück</button>
         <div style={{ flex: 1, minWidth: 200 }}>
-          {editMode ? <input style={{ ...S.input, fontSize: 18, fontWeight: 700, marginBottom: 6 }} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+          {editMode ? <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", fontSize: 18, fontWeight: 700, marginBottom: 6 }} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
             : <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 4 }}>{shoot.title}</div>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <span style={S.badge(shoot.status)}>{sc.label}</span>
@@ -761,7 +709,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {links.map(link => (
-              <div key={link.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12 }}>
+              <div key={link.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ fontSize: 26 }}>{linkIcon(link.type)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{link.label || "Dokument"}</div>
@@ -771,7 +719,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                 {canEditShoot && <button style={S.btn("danger")} onClick={() => handleRemoveLink(link.id)}>✕</button>}
               </div>
             ))}
-            {links.length === 0 && <div style={{ ...S.card, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>📁</div><div>Keine Dokumente hinterlegt</div>{canEditShoot && <button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setShowAddLink(true)}>＋ Link hinzufügen</button>}</div>}
+            {links.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 40, color: C.textDim }}><div style={{ fontSize: 36, marginBottom: 10 }}>📁</div><div>Keine Dokumente hinterlegt</div>{canEditShoot && <button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => setShowAddLink(true)}>＋ Link hinzufügen</button>}</div>}
           </div>
           {showAddLink && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
             <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Dokument hinzufügen</div>
@@ -794,12 +742,12 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {sp.map(p => { const u = users.find(u=>u.id===p.user_id)||{name:"Unbekannt",email:""}; return (
-              <div key={p.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div key={p.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <div style={S.avatar(34)}>{u.name?.[0]}</div>
                 <div style={{ flex: 1, minWidth: 120 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 11, color: C.textDim }}>{p.role_on_shoot}</div></div>
                 <span style={S.attendBadge(p.attendance_status)}>{ATTEND_CONFIG[p.attendance_status]?.label}</span>
-                {canEditShoot ? <div style={{ display: "flex", gap: 4 }}><select style={{ ...S.select, width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select><button style={S.btn("danger")} onClick={()=>handleRemoveP(p.id)}>✕</button></div>
-                : p.user_id===user.id && <select style={{ ...S.select, width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>}
+                {canEditShoot ? <div style={{ display: "flex", gap: 4 }}><select style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", cursor:"pointer", fontFamily:"inherit", width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select><button style={S.btn("danger")} onClick={()=>handleRemoveP(p.id)}>✕</button></div>
+                : p.user_id===user.id && <select style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", cursor:"pointer", fontFamily:"inherit", width: "auto", padding: "4px 8px", fontSize: 12 }} value={p.attendance_status} onChange={e=>handleStatusChange(p.id,e.target.value)}>{Object.entries(ATTEND_CONFIG).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}</select>}
               </div>
             ); })}
           </div>
@@ -827,7 +775,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
               <div key={entry.id} style={{ position: "relative", paddingBottom: 16 }}>
                 <div style={{ position: "absolute", left: -23, top: 4, width: 8, height: 8, borderRadius: 0, background: C.accent }}/>
                 {canEditShoot ? (
-                  <div style={{ ...S.card, padding: 12 }}>
+                  <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 12 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "70px 1fr 1fr auto", gap: 8, alignItems: "start" }}>
                       <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Zeit</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="time" value={entry.time||""} onChange={e=>updateSched(entry.id,"time",e.target.value)}/></div>
                       <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Titel</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={entry.title||""} onChange={e=>updateSched(entry.id,"title",e.target.value)}/></div>
@@ -852,16 +800,16 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
         <div>
           {/* Summary bar */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 20 }}>
-            <div style={{ ...S.statCard, padding: "14px 18px" }}>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px 20px", boxShadow:C.shadow, padding: "14px 18px" }}>
               <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{shootEquip.length}</div>
               <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Crew Equipment</div>
             </div>
-            <div style={{ ...S.statCard, padding: "14px 18px" }}>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px 20px", boxShadow:C.shadow, padding: "14px 18px" }}>
               <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.02em", color: C.text }}>{rentalEquip.length}</div>
               <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Mietequipment</div>
             </div>
-            <div style={{ ...S.statCard, padding: "14px 18px", borderLeft: `2px solid ${C.accent}` }}>
-              <div style={{ ...S.statValue, color: C.accent }}>€{rentalTotal.toLocaleString("de-DE", {minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"18px 20px", boxShadow:C.shadow, padding: "14px 18px", borderLeft: `2px solid ${C.accent}` }}>
+              <div style={{ fontSize:30, fontWeight:700, letterSpacing:"-0.02em", color:C.text, color: C.accent }}>€{rentalTotal.toLocaleString("de-DE", {minimumFractionDigits:2,maximumFractionDigits:2})}</div>
               <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>Mietkosten ({shootDays} Tag{shootDays!==1?"e":""})</div>
             </div>
           </div>
@@ -877,7 +825,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
             </div>
             {!equipLoaded ? <div style={{ color: C.textDim, fontSize: 12, padding: 16 }}>Lade...</div> : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {shootEquip.length === 0 && <div style={{ ...S.card, padding: 24, textAlign: "center", color: C.textDim, fontSize: 12 }}>Kein Crew-Equipment eingetragen</div>}
+                {shootEquip.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24, textAlign: "center", color: C.textDim, fontSize: 12 }}>Kein Crew-Equipment eingetragen</div>}
                 {(() => {
                   const byUser = {};
                   shootEquip.forEach(e => { const u = users.find(u => u.id === e.user_id) || { name: "Unbekannt" }; if (!byUser[e.user_id]) byUser[e.user_id] = { user: u, items: [] }; byUser[e.user_id].items.push(e); });
@@ -917,9 +865,9 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
               {canEditShoot && <button style={S.btn("outline")} onClick={() => setShowAddRental(true)}>＋ Mietitem</button>}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {rentalEquip.length === 0 && <div style={{ ...S.card, padding: 24, textAlign: "center", color: C.textDim, fontSize: 12 }}>Kein Mietequipment</div>}
+              {rentalEquip.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24, textAlign: "center", color: C.textDim, fontSize: 12 }}>Kein Mietequipment</div>}
               {rentalEquip.map(r => (
-                <div key={r.id} style={{ ...S.card, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div key={r.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 180 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>{r.name}</div>
                     {r.category && <div style={{ fontSize: 10, color: C.textDim }}>{r.category}</div>}
@@ -927,12 +875,12 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                   {canEditShoot ? (
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <label style={{ ...S.label, marginBottom: 2 }}>CHF/Tag</label>
-                        <input style={{ ...S.input, width: 90, padding: "5px 8px", fontSize: 12 }} type="number" value={r.daily_rate||""} onChange={e => updateRentalField(r.id, "daily_rate", e.target.value)} />
+                        <label style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:5, display:"block", marginBottom: 2 }}>CHF/Tag</label>
+                        <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", width: 90, padding: "5px 8px", fontSize: 12 }} type="number" value={r.daily_rate||""} onChange={e => updateRentalField(r.id, "daily_rate", e.target.value)} />
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <label style={{ ...S.label, marginBottom: 2 }}>Anz.</label>
-                        <input style={{ ...S.input, width: 60, padding: "5px 8px", fontSize: 12 }} type="number" min="1" value={r.quantity||1} onChange={e => updateRentalField(r.id, "quantity", e.target.value)} />
+                        <label style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:5, display:"block", marginBottom: 2 }}>Anz.</label>
+                        <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", width: 60, padding: "5px 8px", fontSize: 12 }} type="number" min="1" value={r.quantity||1} onChange={e => updateRentalField(r.id, "quantity", e.target.value)} />
                       </div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, minWidth: 80, textAlign: "right", fontFamily: "inherit" }}>
                         CHF {((parseFloat(r.daily_rate)||0)*(parseInt(r.quantity)||1)*shootDays).toFixed(2)}
@@ -1087,7 +1035,7 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
       </div>
 
       {totalShots === 0 && (
-        <div style={{ ...S.card, textAlign: "center", padding: 48, color: C.textDim }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 48, color: C.textDim }}>
           <div style={{ fontSize: 28, marginBottom: 10 }}>🎬</div>
           <div style={{ fontSize: 12 }}>Noch keine Shots geplant.</div>
           {canEdit && <button style={{ ...S.btn("primary"), marginTop: 14 }} onClick={addNewPart}>Ersten Teil erstellen</button>}
@@ -1123,14 +1071,14 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
                   const isOpen = expandedShots[shot.id];
                   const stColor = shotStatusColor[shot.status] || C.textDim;
                   return (
-                    <div key={shot.id} style={{ ...S.card, padding: "10px 12px", borderLeft: `2px solid ${stColor}` }}>
+                    <div key={shot.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: "10px 12px", borderLeft: `2px solid ${stColor}` }}>
                       {/* Collapsed row */}
                       <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: stColor, fontFamily: "inherit", minWidth: 44, flexShrink: 0 }}>{code}</span>
                         {canEdit
-                          ? <input style={{ ...S.input, flex: 1, padding: "4px 8px", fontSize: 12 }} value={shot.title||""} onChange={e=>updateShot(shot.id,"title",e.target.value)} placeholder="Shot-Titel..."/>
+                          ? <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", flex: 1, padding: "4px 8px", fontSize: 12 }} value={shot.title||""} onChange={e=>updateShot(shot.id,"title",e.target.value)} placeholder="Shot-Titel..."/>
                           : <span style={{ flex: 1, fontSize: 12, color: C.text }}>{shot.title || "—"}</span>}
-                        <select style={{ ...S.select, width: "auto", padding: "4px 8px", fontSize: 10, flexShrink: 0 }} value={shot.status||"open"} onChange={e=>updateShot(shot.id,"status",e.target.value)}>
+                        <select style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", cursor:"pointer", fontFamily:"inherit", width: "auto", padding: "4px 8px", fontSize: 10, flexShrink: 0 }} value={shot.status||"open"} onChange={e=>updateShot(shot.id,"status",e.target.value)}>
                           {Object.entries(SHOT_STATUS).map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
                         </select>
                         <button style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 14, padding: "2px 4px" }} onClick={() => toggleExpand(shot.id)}>
@@ -1142,7 +1090,7 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
                       {/* Expanded details */}
                       {isOpen && (
                         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${C.border}`, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-                          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label>{canEdit ? <textarea style={{ ...S.textarea, minHeight: 52 }} value={shot.description||""} onChange={e=>updateShot(shot.id,"description",e.target.value)}/> : <div style={{ ...S.input, minHeight: 52, color: C.textMid, paddingTop: 8 }}>{shot.description||"—"}</div>}</div>
+                          <div style={{ gridColumn: "1/-1" }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Beschreibung</label>{canEdit ? <textarea style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", resize:"vertical", minHeight:80, fontFamily:"inherit", minHeight: 52 }} value={shot.description||""} onChange={e=>updateShot(shot.id,"description",e.target.value)}/> : <div style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", minHeight: 52, color: C.textMid, paddingTop: 8 }}>{shot.description||"—"}</div>}</div>
                           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Kamera / Optik</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={shot.camera_setting||""} onChange={e=>updateShot(shot.id,"camera_setting",e.target.value)} placeholder="24mm f/2.8" readOnly={!canEdit}/></div>
                           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Dauer (hh:mm)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={shot.duration||""} onChange={e=>updateShot(shot.id,"duration",e.target.value)} placeholder="00:30" readOnly={!canEdit}/></div>
 
@@ -1218,7 +1166,7 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
         <button style={S.btn("primary")} onClick={openNew}>＋ Equipment</button>
       </div>
       {userEquipment.length === 0 ? (
-        <div style={{ ...S.card, textAlign: "center", padding: 48, color: C.textDim }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 48, color: C.textDim }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🎥</div>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: C.text }}>Noch kein Equipment</div>
           <div style={{ fontSize: 11, marginBottom: 16 }}>Speichere dein Equipment einmalig und füge es bei jedem Shoot mit einem Klick hinzu.</div>
@@ -1231,7 +1179,7 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
               <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 8 }}>{cat}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 {items.map(item => (
-                  <div key={item.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div key={item.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ flex: 1, minWidth: 180 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{item.name}</div>
                       {item.serial_number && <div style={{ fontSize: 10, color: C.textDim, fontFamily: "inherit" }}>S/N: {item.serial_number}</div>}
@@ -1280,7 +1228,7 @@ function NewShootPage({ user, clients, setPage, onSave }) {
       </div>
       {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
-        <div style={{ ...S.card, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", flexDirection: "column", gap: 12 }}>
           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Titel *</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))} placeholder="z. B. Brand Film – Kunde AG"/></div>
           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Location</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.location} onChange={e=>setForm(f=>({...f,location:e.target.value}))} placeholder="z. B. Berlin Studio B"/></div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -1300,7 +1248,7 @@ function NewShootPage({ user, clients, setPage, onSave }) {
           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Budget (€)</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="number" value={form.budget} onChange={e=>setForm(f=>({...f,budget:e.target.value}))} placeholder="8500"/></div>
           <div><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Status</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}><option value="planned">Geplant</option><option value="confirmed">Bestätigt</option><option value="cancelled">Abgesagt</option></select></div>
         </div>
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ ...S.textarea, minHeight: 200 }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Besonderheiten, Equipment..."/></div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Notizen</label><textarea style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", resize:"vertical", minHeight:80, fontFamily:"inherit", minHeight: 200 }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Besonderheiten, Equipment..."/></div>
       </div>
     </div>
   );
@@ -1327,7 +1275,7 @@ function ClientsPage({ user }) {
     <div>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Kunden</div><div style={{ fontSize: 12, color: C.textDim }}>{clients.length} Einträge</div></div>
-        <div style={{ display: "flex", gap: 8 }}><input style={{ ...S.input, maxWidth: 200 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
+        <div style={{ display: "flex", gap: 8 }}><input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", maxWidth: 200 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
       </div>
       {loading ? <div style={{ textAlign:"center", padding:40, color:C.textDim }}>Lade...</div> : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1348,7 +1296,7 @@ function ClientsPage({ user }) {
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:C.textDim }}><div style={{ fontSize:36, marginBottom:10 }}>🏢</div><div>Keine Kunden</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Kunden anlegen</button>}</div>}
+          {filtered.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign:"center", padding:40, color:C.textDim }}><div style={{ fontSize:36, marginBottom:10 }}>🏢</div><div>Keine Kunden</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Kunden anlegen</button>}</div>}
         </div>
       )}
       {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
@@ -1389,7 +1337,7 @@ function ActorsPage({ user }) {
     <div>
       <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Schauspieler</div><div style={{ fontSize: 12, color: C.textDim }}>{actors.length} Einträge</div></div>
-        <div style={{ display: "flex", gap: 8 }}><input style={{ ...S.input, maxWidth: 180 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
+        <div style={{ display: "flex", gap: 8 }}><input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", maxWidth: 180 }} placeholder="🔍 Suchen..." value={search} onChange={e => setSearch(e.target.value)} />{user.is_admin && <button style={S.btn("primary")} onClick={openNew}>＋ Neu</button>}</div>
       </div>
       <div style={{ display: "flex", gap: 5, marginBottom: 16, flexWrap: "wrap" }}>
         {[["all","Alle"], ...GENRES.map(g => [g,g])].map(([val,lbl]) => <button key={val} style={{ padding: "5px 11px", borderRadius: 20, border: "1px solid", borderColor: genreFilter===val?C.accent:C.border, background: genreFilter===val?"rgba(99,102,241,0.15)":"transparent", color: genreFilter===val?C.accent:C.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => setGenreFilter(val)}>{lbl}</button>)}
@@ -1413,7 +1361,7 @@ function ActorsPage({ user }) {
               </div>
             </div>
           ))}
-          {filtered.length === 0 && <div style={{ ...S.card, textAlign:"center", padding:40, color:C.textDim, gridColumn:"1/-1" }}><div style={{ fontSize:36, marginBottom:10 }}>🎭</div><div>Keine Einträge</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Schauspieler anlegen</button>}</div>}
+          {filtered.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign:"center", padding:40, color:C.textDim, gridColumn:"1/-1" }}><div style={{ fontSize:36, marginBottom:10 }}>🎭</div><div>Keine Einträge</div>{user.is_admin && <button style={{ ...S.btn("primary"), marginTop:12 }} onClick={openNew}>Ersten Schauspieler anlegen</button>}</div>}
         </div>
       )}
       {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
@@ -1466,7 +1414,7 @@ function UsersPage({ users, setUsers, user: currentUser }) {
         <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>⏳ Ausstehende Anfragen ({pending.length})</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
           {pending.map(u => (
-            <div key={u.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.05)" }}>
+            <div key={u.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.05)" }}>
               <div style={S.avatar(36)}>{u.name?.[0]}</div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 11, color: C.textDim }}>{u.email} · <span style={S.roleBadge(u.role)}>{ROLE_CONFIG[u.role]?.label || u.role}</span></div></div>
               <button style={S.btn("primary")} onClick={() => handleApprove(u)}>✓ Freigeben</button>
@@ -1479,7 +1427,7 @@ function UsersPage({ users, setUsers, user: currentUser }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: C.textDim, marginBottom: 10 }}>Aktive Benutzer</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {approved.map(u => (
-          <div key={u.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div key={u.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={S.avatar(36)}>{u.name?.[0]}</div>
             <div style={{ flex: 1, minWidth: 150 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>{u.name}<span style={S.roleBadge(u.role || (u.is_admin ? "admin" : "crew"))}>{ROLE_CONFIG[u.role]?.label || (u.is_admin ? "Admin" : "Crew")}</span>{u.must_change_password && <span style={S.tag("#EF4444")}>⚠ PW ändern</span>}</div>
@@ -1496,7 +1444,7 @@ function UsersPage({ users, setUsers, user: currentUser }) {
         <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
         <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Rolle</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}><option value="crew">Crew</option><option value="actor">Schauspieler</option><option value="admin">Admin</option></select></div>
         <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><input type="checkbox" id="ia" checked={form.is_admin} onChange={e=>setForm(f=>({...f,is_admin:e.target.checked}))}/><label htmlFor="ia" style={{ fontSize: 13, color: C.textMid, cursor: "pointer" }}>Admin-Rechte</label></div>
-        <div style={{ ...S.card, padding: "10px 14px", marginBottom: 18, background: "rgba(99,102,241,0.06)" }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: "10px 14px", marginBottom: 18, background: "rgba(99,102,241,0.06)" }}>
           <div style={{ fontSize: 11, color: C.textDim, marginBottom: 4 }}>Temporäres Passwort:</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.accent, letterSpacing: "1px" }}>{tempPw}</div>
           <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>In Supabase → Authentication → Add User eingeben.</div>
@@ -1732,7 +1680,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
             const pendingInvites = allMembers.filter(m => m.user_id === user.id && m.status === "pending");
             if (!pendingInvites.length) return null;
             return (
-              <div style={{ ...S.card, borderLeft: `2px solid ${C.accent}`, background: C.accentDim }}>
+              <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, borderLeft: `2px solid ${C.accent}`, background: C.accentDim }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: C.accent, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>📬 Einladungen ({pendingInvites.length})</div>
                 {pendingInvites.map(inv => {
                   const nw = networks.find(n => n.id === inv.network_id) || { name: "Unbekannt" };
@@ -1749,7 +1697,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
           })()}
 
           {myNetworks.length === 0 && (
-            <div style={{ ...S.card, textAlign: "center", padding: 48, color: C.textDim }}>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, textAlign: "center", padding: 48, color: C.textDim }}>
               <div style={{ fontSize: 28, marginBottom: 12 }}>🌐</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Noch kein Netzwerk</div>
               <div style={{ fontSize: 11, marginBottom: 16 }}>"Erstelle ein Netzwerk und lade Crew ein oder trete einem bestehenden bei."</div>
@@ -1820,12 +1768,12 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       {tab === "discover" && !loading && (
         <div>
           <div style={{ fontSize: 11, color: C.textDim, marginBottom: 14 }}>Öffentliche Netzwerke:</div>
-          {discoverNets.length === 0 && <div style={{ ...S.card, padding: 32, textAlign: "center", color: C.textDim, fontSize: 12 }}>Keine weiteren Netzwerke verfügbar.</div>}
+          {discoverNets.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 32, textAlign: "center", color: C.textDim, fontSize: 12 }}>Keine weiteren Netzwerke verfügbar.</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {discoverNets.map(nw => {
               const members = allMembers.filter(m => m.network_id === nw.id && m.status === "active");
               return (
-                <div key={nw.id} style={{ ...S.card, display: "flex", gap: 12, alignItems: "center" }}>
+                <div key={nw.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 12, alignItems: "center" }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{nw.name}</div>
                     {nw.description && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{nw.description}</div>}
@@ -1843,7 +1791,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
       {tab === "shoots" && !loading && (
         <div>
           {publishedShoots.length === 0 && (
-            <div style={{ ...S.card, padding: 40, textAlign: "center", color: C.textDim }}>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 40, textAlign: "center", color: C.textDim }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>📋</div>
               <div style={{ fontSize: 12 }}>Keine ausgeschriebenen Shoots in deinen Netzwerken.</div>
             </div>
@@ -1893,7 +1841,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
                   const applicant = users.find(u => u.id === app.applicant_id) || { name: "?" };
                   const shoot = shoots.find(s => s.id === app.shoot_id) || { title: "?" };
                   return (
-                    <div key={app.id} style={{ ...S.card, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", borderLeft: `2px solid ${C.accent}` }}>
+                    <div key={app.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", borderLeft: `2px solid ${C.accent}` }}>
                       <div style={S.avatar(32)}>{applicant.name?.[0]}</div>
                       <div style={{ flex: 1, minWidth: 140 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{applicant.name}</div>
@@ -1919,7 +1867,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
                   const u = users.find(u => u.id === mem.user_id) || { name: "?" };
                   const nw = networks.find(n => n.id === mem.network_id) || { name: "?" };
                   return (
-                    <div key={mem.id} style={{ ...S.card, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                    <div key={mem.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                       <div style={S.avatar(32)}>{u.name?.[0]}</div>
                       <div style={{ flex: 1, minWidth: 140 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div>
@@ -1939,13 +1887,13 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Meine Anfragen ({myOwnApps.length})</div>
             {myOwnApps.length === 0
-              ? <div style={{ ...S.card, padding: 24, color: C.textDim, fontSize: 12, textAlign: "center" }}>Noch keine Anfragen gesendet.</div>
+              ? <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24, color: C.textDim, fontSize: 12, textAlign: "center" }}>Noch keine Anfragen gesendet.</div>
               : myOwnApps.map(app => {
                   const shoot = shoots.find(s => s.id === app.shoot_id) || { title: "?" };
                   const stMap = { pending: { label: "Ausstehend", color: C.amber }, approved: { label: "Angenommen ✓", color: C.green }, rejected: { label: "Abgelehnt", color: C.danger } };
                   const st = stMap[app.status] || stMap.pending;
                   return (
-                    <div key={app.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                    <div key={app.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
                       <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{shoot.title}</div><div style={{ fontSize: 11, color: C.textDim }}>Rolle: {app.proposed_role || "Crew"}</div></div>
                       <span style={S.tag(st.color)}>{st.label}</span>
                     </div>
@@ -1955,7 +1903,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
           </div>
 
           {pendingTotal === 0 && myOwnApps.length === 0 && (
-            <div style={{ ...S.card, padding: 32, textAlign: "center", color: C.textDim, fontSize: 12 }}>Keine Anfragen.</div>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 32, textAlign: "center", color: C.textDim, fontSize: 12 }}>Keine Anfragen.</div>
           )}
         </div>
       )}
@@ -1991,7 +1939,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
           {users.filter(u => u.is_approved).map(u => {
             const already = allMembers.find(m => m.network_id === showInviteModal.id && m.user_id === u.id);
             return (
-              <div key={u.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: already ? C.accentDim : C.bg }}>
+              <div key={u.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: already ? C.accentDim : C.bg }}>
                 <div style={S.avatar(26)}>{u.name?.[0]}</div>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 10, color: C.textDim }}>{u.email}</div></div>
                 {already ? <span style={S.tag(already.status === "active" ? C.green : C.amber)}>{already.status === "active" ? "✓ Dabei" : "⏳ Eingeladen"}</span>
@@ -2011,7 +1959,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
           {shoots.filter(s => s.created_by === user.id || user.is_admin).map(s => {
             const alreadyLinked = networkLinks.find(l => l.network_id === showAssignModal.id && l.shoot_id === s.id);
             return (
-              <div key={s.id} style={{ ...S.card, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: alreadyLinked ? C.accentDim : C.bg }}>
+              <div key={s.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: alreadyLinked ? C.accentDim : C.bg }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>{s.title}</div>
                   <div style={{ fontSize: 10, color: C.textDim }}>{fmtRange(s.date_start, s.date_end)} · {s.location || "kein Ort"}</div>
@@ -2095,7 +2043,7 @@ function ProfilePage({ user, setUser }) {
         <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", boxShadow: C.shadow }}>
           <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 14 }}>Benutzername ändern</div>
           <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Anzeigename</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={nameForm.name} onChange={e=>setNameForm(f=>({...f,name:e.target.value}))}/></div>
-          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ ...S.input, color: C.textDim }} value={user.email} readOnly/></div>
+          <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", color: C.textDim }} value={user.email} readOnly/></div>
           {nameMsg && <div style={{ fontSize: 11, color: C.green, marginBottom: 10 }}>{nameMsg}</div>}
           <button style={S.btn("primary")} onClick={handleSaveName} disabled={saving}>Speichern</button>
         </div>
@@ -2231,8 +2179,8 @@ function MarketplacePage({ user, users, userEquipment }) {
       {/* ── BROWSE ── */}
       {tab === "browse" && !loading && (
         <div>
-          <input style={{ ...S.input, maxWidth: 260, marginBottom: 16 }} placeholder="🔍 Equipment suchen..." value={search} onChange={e=>setSearch(e.target.value)}/>
-          {filtered.length === 0 && <div style={{ ...S.card, padding: 40, textAlign: "center", color: C.textDim }}><div style={{ fontSize: 28, marginBottom: 10 }}>🎥</div><div style={{ fontSize: 12 }}>Kein Equipment gefunden.</div></div>}
+          <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit", maxWidth: 260, marginBottom: 16 }} placeholder="🔍 Equipment suchen..." value={search} onChange={e=>setSearch(e.target.value)}/>
+          {filtered.length === 0 && <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 40, textAlign: "center", color: C.textDim }}><div style={{ fontSize: 28, marginBottom: 10 }}>🎥</div><div style={{ fontSize: 12 }}>Kein Equipment gefunden.</div></div>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
             {filtered.map(lst => {
               const owner = users.find(u => u.id === lst.owner_id) || { name: "?" };
@@ -2269,7 +2217,7 @@ function MarketplacePage({ user, users, userEquipment }) {
       {tab === "my-listings" && !loading && (
         <div>
           {myListings.length === 0 && (
-            <div style={{ ...S.card, padding: 40, textAlign: "center", color: C.textDim }}>
+            <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 40, textAlign: "center", color: C.textDim }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>📦</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>Noch keine Inserate</div>
               <div style={{ fontSize: 11, marginBottom: 16 }}>Schalte Equipment-Inserate und verdiene mit deinem Equipment.</div>
@@ -2280,7 +2228,7 @@ function MarketplacePage({ user, users, userEquipment }) {
             {myListings.map(lst => {
               const reqCount = requests.filter(r => r.listing_id === lst.id && r.status === "pending").length;
               return (
-                <div key={lst.id} style={{ ...S.card, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <div key={lst.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 160 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{lst.name}</div>
                     <div style={{ fontSize: 11, color: C.textDim }}>CHF {(parseFloat(lst.daily_rate)||0).toFixed(0)}/Tag{lst.weekly_rate > 0 ? ` · CHF ${(parseFloat(lst.weekly_rate)||0).toFixed(0)}/Woche` : ""}</div>
@@ -2308,7 +2256,7 @@ function MarketplacePage({ user, users, userEquipment }) {
                   const requester = users.find(u => u.id === req.requester_id) || { name: "?" };
                   const days = req.date_from && req.date_to ? Math.max(1, Math.round((new Date(req.date_to) - new Date(req.date_from)) / 86400000) + 1) : 1;
                   return (
-                    <div key={req.id} style={{ ...S.card, borderLeft: `2px solid ${C.accent}` }}>
+                    <div key={req.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, borderLeft: `2px solid ${C.accent}` }}>
                       <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 8 }}>
                         <div style={S.avatar(32)}>{requester.name?.[0]}</div>
                         <div style={{ flex: 1 }}>
@@ -2331,13 +2279,13 @@ function MarketplacePage({ user, users, userEquipment }) {
           <div>
             <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 10 }}>Meine Anfragen ({myOutgoingRequests.length})</div>
             {myOutgoingRequests.length === 0
-              ? <div style={{ ...S.card, padding: 24, color: C.textDim, fontSize: 12, textAlign: "center" }}>Noch keine Anfragen gesendet.</div>
+              ? <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24, color: C.textDim, fontSize: 12, textAlign: "center" }}>Noch keine Anfragen gesendet.</div>
               : myOutgoingRequests.map(req => {
                   const lst = listings.find(l => l.id === req.listing_id) || { name: "?" };
                   const stMap = { pending: { label: "Ausstehend", color: C.amber }, approved: { label: "Angenommen ✓", color: C.green }, rejected: { label: "Abgelehnt", color: C.danger } };
                   const st = stMap[req.status] || stMap.pending;
                   return (
-                    <div key={req.id} style={{ ...S.card, display: "flex", gap: 12, alignItems: "center", marginBottom: 6 }}>
+                    <div key={req.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", gap: 12, alignItems: "center", marginBottom: 6 }}>
                       <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{lst.name}</div><div style={{ fontSize: 10, color: C.textDim }}>{fmtRange(req.date_from, req.date_to)}</div></div>
                       <span style={S.tag(st.color)}>{st.label}</span>
                     </div>
@@ -2379,7 +2327,7 @@ function MarketplacePage({ user, users, userEquipment }) {
       {/* ── REQUEST MODAL ── */}
       {showRequestModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
         <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Anfrage — {showRequestModal.name}</div>
-        <div style={{ ...S.card, padding: "10px 14px", marginBottom: 16, background: C.accentDim, borderLeft: `2px solid ${C.accent}` }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: "10px 14px", marginBottom: 16, background: C.accentDim, borderLeft: `2px solid ${C.accent}` }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>CHF {(parseFloat(showRequestModal.daily_rate)||0).toFixed(0)} / Tag</div>
           {showRequestModal.weekly_rate > 0 && <div style={{ fontSize: 11, color: C.textDim }}>CHF {(parseFloat(showRequestModal.weekly_rate)||0).toFixed(0)} / Woche</div>}
         </div>
