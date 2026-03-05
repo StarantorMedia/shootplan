@@ -427,10 +427,20 @@ function AuthPage({ onLogin }) {
     try {
       const data = await db.signIn(email.trim().toLowerCase(), password);
       db.setToken(data.access_token);
-      const profiles = await db.select("users", `email=eq.${encodeURIComponent(email)}`);
+      // Supabase Auth UUID — this is the canonical user ID used in all FK references
+      const authId = data.user?.id;
+      const profiles = await db.select("users", `email=eq.${encodeURIComponent(email.trim().toLowerCase())}`);
       if (!profiles.length) throw new Error("Kein Benutzerprofil gefunden.");
       if (!profiles[0].is_approved) throw new Error("Dein Account wartet noch auf Freigabe durch einen Admin.");
-      onLogin(profiles[0], data.access_token, data.refresh_token);
+      // If users.id does not match auth UUID, patch it once so all FK references are consistent
+      let profile = profiles[0];
+      if (authId && profile.id !== authId) {
+        try {
+          await db.update("users", { id: authId }, `email=eq.${encodeURIComponent(email.trim().toLowerCase())}`);
+          profile = { ...profile, id: authId };
+        } catch(e) { /* id may be PK — cannot update, use as-is */ }
+      }
+      onLogin(profile, data.access_token, data.refresh_token);
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
@@ -447,8 +457,9 @@ function AuthPage({ onLogin }) {
     if (valErr) { setError(valErr); return; }
     setLoading(true); setError("");
     try {
-      await db.signUp(email.trim().toLowerCase(), password);
-      await db.insert("users", sanitizeObj({ name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false, terms_accepted_at: new Date().toISOString() }));
+      const signUpData = await db.signUp(email.trim().toLowerCase(), password);
+      const authId = signUpData.user?.id;
+      await db.insert("users", sanitizeObj({ id: authId || undefined, name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false, terms_accepted_at: new Date().toISOString() }));
       try { const admins = await db.select("users", "is_admin=eq.true&is_approved=eq.true"); for (const adm of admins) { notify("new_user_registration", adm.email, { user_name: name, user_email: email, user_role: role }); } } catch(e) {}
       setSuccess("Account erstellt! Du wirst benachrichtigt sobald ein Admin deinen Account freigibt.");
       setMode("login"); setName(""); setPassword("");
@@ -761,7 +772,7 @@ function CalendarView({ shoots, user, setSelectedShoot, setPage }) {
 function ShootsList({ user, shoots, participants, clients, setPage, setSelectedShoot }) {
   const [view, setView] = useState("list"); const [filter, setFilter] = useState("all"); const [search, setSearch] = useState("");
   const myIds = participants.filter(p => p.user_id === user.id).map(p => p.shoot_id);
-  const visible = user.is_admin ? shoots : shoots.filter(s => myIds.includes(s.id));
+  const visible = user.is_admin ? shoots : shoots.filter(s => myIds.includes(s.id) || s.created_by === user.id);
   const filtered = (filter === "all" ? visible : visible.filter(s => s.status === filter)).filter(s => !search || s.title?.toLowerCase().includes(search.toLowerCase()) || s.location?.toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
   return (
