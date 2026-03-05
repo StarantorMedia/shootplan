@@ -34,12 +34,8 @@ const db = {
   setToken(t) { _token = t; },
   clearToken() { _token = null; try { localStorage.removeItem(SESSION_KEY); } catch(e){} },
   async select(table, filter = "") {
-    const url = `${SUPABASE_URL}/rest/v1/${table}?select=*${filter ? "&" + filter : ""}`;
-    const r = await fetch(url, { headers: getHeaders() });
-    const d = await r.json();
-    if (!r.ok) { console.error(`[DB] SELECT ${table} FAILED`, r.status, d); throw new Error(d?.message || "Fehler"); }
-    console.log(`[DB] SELECT ${table} (${filter||"all"}) →`, d.length ?? d, "rows");
-    return d;
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*${filter ? "&" + filter : ""}`, { headers: getHeaders() });
+    const d = await r.json(); if (!r.ok) throw new Error(d?.message || "Fehler"); return d;
   },
   async insert(table, body) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers: getHeaders(), body: JSON.stringify(body) });
