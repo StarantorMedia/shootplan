@@ -1701,6 +1701,113 @@ function ActorsPage({ user }) {
 // ============================================================
 // USERS / APPROVAL
 // ============================================================
+
+function BroadcastSection({ users }) {
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null); // { sent, failed }
+  const [preview, setPreview] = useState(false);
+  const MAX_SUBJECT = 120;
+  const MAX_MSG = 4000;
+
+  const handleSend = async () => {
+    if (!subject.trim()) { alert("Betreff fehlt."); return; }
+    if (!message.trim() || message.trim().length < 10) { alert("Nachricht zu kurz (min. 10 Zeichen)."); return; }
+    const recipients = users.filter(u => u.email);
+    if (recipients.length === 0) { alert("Keine Empfänger gefunden."); return; }
+    if (!confirm(`E-Mail an ${recipients.length} Benutzer senden?\n\nBetreff: ${subject}`)) return;
+
+    setSending(true); setResult(null);
+    let sent = 0, failed = 0;
+    for (const u of recipients) {
+      try {
+        await notify("admin_broadcast", u.email, {
+          user_name: u.name || "Benutzer",
+          subject: subject.trim(),
+          message: message.trim(),
+        });
+        sent++;
+      } catch(e) { failed++; }
+      // Stagger requests to avoid rate limiting
+      await new Promise(r => setTimeout(r, 120));
+    }
+    setSending(false);
+    setResult({ sent, failed });
+    if (sent > 0) { setSubject(""); setMessage(""); }
+  };
+
+  return (
+    <div style={{ marginTop: 40 }}>
+      <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 28, marginBottom: 20 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 3 }}>E-Mail an alle Benutzer</div>
+        <div style={{ fontSize: 12, color: C.textDim }}>{users.length} aktive Benutzer erhalten diese Nachricht</div>
+      </div>
+
+      {result && (
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 10, background: result.failed === 0 ? C.greenDim : C.amberDim, border: `1px solid ${result.failed === 0 ? C.green : C.amber}33` }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: result.failed === 0 ? C.green : C.amber }}>
+            {result.sent} gesendet{result.failed > 0 ? `, ${result.failed} fehlgeschlagen` : " — Fertig"}
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "20px", boxShadow: C.shadow }}>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>
+            Betreff <span style={{ color: C.textDim, fontWeight: 400 }}>({subject.length}/{MAX_SUBJECT})</span>
+          </label>
+          <input
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }}
+            placeholder="z.B. Neue Funktion verfügbar / AGB-Update"
+            value={subject}
+            maxLength={MAX_SUBJECT}
+            onChange={e => setSubject(e.target.value)}
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>
+            Nachricht <span style={{ color: C.textDim, fontWeight: 400 }}>({message.length}/{MAX_MSG})</span>
+          </label>
+          <textarea
+            style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit", minHeight: 160, resize: "vertical", lineHeight: 1.6 }}
+            placeholder="Schreibe hier deine Nachricht an alle Benutzer..."
+            value={message}
+            maxLength={MAX_MSG}
+            onChange={e => setMessage(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+          <button
+            style={{ ...S.btn("ghost"), fontSize: 12 }}
+            onClick={() => setPreview(p => !p)}
+          >{preview ? "Vorschau ausblenden" : "Vorschau anzeigen"}</button>
+
+          <button
+            style={{ ...S.btn("primary"), opacity: sending ? 0.6 : 1, cursor: sending ? "not-allowed" : "pointer" }}
+            onClick={handleSend}
+            disabled={sending || !subject.trim() || !message.trim()}
+          >{sending ? `Sende... (${users.length} User)` : `Senden an ${users.length} Benutzer`}</button>
+        </div>
+
+        {preview && subject && message && (
+          <div style={{ marginTop: 20, borderTop: `1px solid ${C.border}`, paddingTop: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>E-Mail Vorschau</div>
+            <div style={{ background: C.surfaceHi, borderRadius: 12, padding: "20px", border: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 11, color: C.textDim, marginBottom: 4 }}>Betreff</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 16 }}>{subject}</div>
+              <div style={{ fontSize: 11, color: C.textDim, marginBottom: 4 }}>Nachricht</div>
+              <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{message}</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function UsersPage({ users, setUsers, user: currentUser }) {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", role: "crew", is_admin: false });
@@ -1887,6 +1994,9 @@ function UsersPage({ users, setUsers, user: currentUser }) {
           })}
         </div>
       </div>
+
+      {/* Broadcast Email */}
+      <BroadcastSection users={approved} />
 
       {/* Create user modal */}
       {showModal && (
