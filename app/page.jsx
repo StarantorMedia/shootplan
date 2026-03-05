@@ -198,7 +198,7 @@ var THEMES = {
   light: {
     bg:"#F2F2F7", surface:"#FFFFFF", surfaceHi:"#F2F2F7", border:"#E5E5EA", borderHi:"#C7C7CC",
     accent:"#007AFF", accentDim:"rgba(0,122,255,0.10)",
-    text:"#000000", textMid:"rgba(60,60,67,0.6)", textDim:"rgba(60,60,67,0.35)",
+    text:"#000000", textMid:"rgba(60,60,67,0.6)", textDim:"rgba(60,60,67,0.65)",
     danger:"#FF3B30", dangerDim:"rgba(255,59,48,0.12)",
     green:"#34C759", greenDim:"rgba(52,199,89,0.12)",
     amber:"#FF9500", amberDim:"rgba(255,149,0,0.12)",
@@ -217,6 +217,7 @@ if (typeof window !== "undefined") {
 }
 // C is a plain object — reassigned on theme change via Object.assign
 var C = Object.assign({}, THEMES[_themeMode]);
+if (typeof window !== 'undefined') { try { document.documentElement.setAttribute('data-theme', _themeMode); } catch(e) {} }
 var getC = function() { return C; };
 
 var isMobile = () => typeof window !== "undefined" && window.innerWidth < 768;
@@ -273,11 +274,11 @@ function useWindowSize() {
 // ============================================================
 // ─── Swiss-standard legal documents ─────────────────────────────────────────
 function TermsContent() {
-  const s = { h: { fontSize:14, fontWeight:700, color:"#FFFFFF", marginTop:20, marginBottom:6 }, p: { fontSize:13, color:"#AEAEB2", lineHeight:1.7, marginBottom:8 } };
+  const s = { h: { fontSize:14, fontWeight:700, color:C.text, marginTop:20, marginBottom:6 }, p: { fontSize:13, color:C.textMid, lineHeight:1.7, marginBottom:8 } };
   return (
     <div>
-      <p style={{ color:"#FFFFFF", fontWeight:700, fontSize:15, marginBottom:4 }}>Nutzungsbedingungen — ShootPlan Production Suite</p>
-      <p style={{ color:"#636366", fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · Anbieter: Starantor Media, Schweiz</p>
+      <p style={{ color:C.text, fontWeight:700, fontSize:15, marginBottom:4 }}>Nutzungsbedingungen — ShootPlan Production Suite</p>
+      <p style={{ color:C.textDim, fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · Anbieter: Starantor Media, Schweiz</p>
       <p style={s.h}>1. Geltungsbereich</p>
       <p style={s.p}>Diese Nutzungsbedingungen regeln die Nutzung der ShootPlan Production Suite durch registrierte Benutzer. Mit der Registrierung akzeptierst du diese Bedingungen vollumfänglich.</p>
       <p style={s.h}>2. Leistungsumfang</p>
@@ -301,11 +302,11 @@ function TermsContent() {
 }
 
 function PrivacyContent() {
-  const s = { h: { fontSize:14, fontWeight:700, color:"#FFFFFF", marginTop:20, marginBottom:6 }, p: { fontSize:13, color:"#AEAEB2", lineHeight:1.7, marginBottom:8 } };
+  const s = { h: { fontSize:14, fontWeight:700, color:C.text, marginTop:20, marginBottom:6 }, p: { fontSize:13, color:C.textMid, lineHeight:1.7, marginBottom:8 } };
   return (
     <div>
-      <p style={{ color:"#FFFFFF", fontWeight:700, fontSize:15, marginBottom:4 }}>Datenschutzerklärung — ShootPlan Production Suite</p>
-      <p style={{ color:"#636366", fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · gemäss Schweizer nDSG & DSGVO</p>
+      <p style={{ color:C.text, fontWeight:700, fontSize:15, marginBottom:4 }}>Datenschutzerklärung — ShootPlan Production Suite</p>
+      <p style={{ color:C.textDim, fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · gemäss Schweizer nDSG & DSGVO</p>
       <p style={s.h}>1. Verantwortliche Stelle</p>
       <p style={s.p}>Starantor Media · Schweiz · info@starantor.com · shootplan.starantor.com</p>
       <p style={s.h}>2. Erhobene Daten</p>
@@ -315,7 +316,7 @@ function PrivacyContent() {
       <p style={s.h}>4. Rechtsgrundlage</p>
       <p style={s.p}>Die Verarbeitung erfolgt auf Basis deiner Einwilligung (Registrierung), zur Vertragserfüllung sowie auf Grundlage berechtigter Interessen. Es gilt das Schweizer nDSG sowie ergänzend die DSGVO für EU-Nutzende.</p>
       <p style={s.h}>5. Drittanbieter & Auftragsverarbeiter</p>
-      <p style={s.p}><strong style={{color:"#fff"}}>Supabase</strong> (Datenbankhosting, EU – SCC); <strong style={{color:"#fff"}}>Vercel</strong> (Hosting, USA – SCC); <strong style={{color:"#fff"}}>Resend</strong> (E-Mail-Versand). Mit allen Auftragsverarbeitern bestehen Verträge zur Auftragsverarbeitung.</p>
+      <p style={s.p}><strong style={{color:C.text}}>Supabase</strong> (Datenbankhosting, EU – SCC); <strong style={{color:C.text}}>Vercel</strong> (Hosting, USA – SCC); <strong style={{color:C.text}}>Resend</strong> (E-Mail-Versand). Mit allen Auftragsverarbeitern bestehen Verträge zur Auftragsverarbeitung.</p>
       <p style={s.h}>6. Datenspeicherung & Löschung</p>
       <p style={s.p}>Deine Daten werden für die Dauer der aktiven Nutzung gespeichert. Nach Account-Löschung werden personenbezogene Daten innerhalb von 30 Tagen gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
       <p style={s.h}>7. Deine Rechte (nDSG & DSGVO)</p>
@@ -354,8 +355,8 @@ function TermsAcceptanceModal({ user, onAccept }) {
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:3000, padding:20, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
-      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:640, maxHeight:"92vh", display:"flex", flexDirection:"column", boxShadow:"0 40px 100px rgba(0,0,0,0.7)" }}>
+    <div style={{ position:"fixed", inset:0, background:`rgba(0,0,0,${_themeMode==="dark"?0.88:0.55})`, display:"flex", alignItems:"center", justifyContent:"center", zIndex:3000, padding:20, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:640, maxHeight:"92vh", display:"flex", flexDirection:"column", boxShadow:`0 40px 100px rgba(0,0,0,${_themeMode==="dark"?0.7:0.2})` }}>
         {/* Header */}
         <div style={{ marginBottom:16 }}>
           <div style={{ fontSize:20, fontWeight:700, color:C.text, marginBottom:4 }}>Nutzungsbedingungen & Datenschutz</div>
@@ -488,7 +489,7 @@ function AuthPage({ onLogin }) {
         </div>
 
         <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: 24 }}>
-          {success && <div style={{ fontSize: 13, color: "#10B981", padding: "10px 12px", background: "rgba(16,185,129,0.08)", borderRadius: 6, marginBottom: 14 }}>{success}</div>}
+          {success && <div style={{ fontSize: 13, color: C.green, padding: "10px 12px", background: C.greenDim, borderRadius: 6, marginBottom: 14 }}>{success}</div>}
           {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 12, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
 
           {mode === "login" ? (<>
@@ -532,8 +533,8 @@ function AuthPage({ onLogin }) {
 
     {/* Terms / Privacy Modal — rendered outside main div so it overlays correctly */}
     {showTerms && (
-      <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:2000, padding:20, backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)" }}>
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:620, maxHeight:"88vh", display:"flex", flexDirection:"column", boxShadow:"0 32px 80px rgba(0,0,0,0.6)" }}>
+      <div style={{ position:"fixed", inset:0, background:`rgba(0,0,0,${_themeMode==="dark"?0.8:0.5})`, display:"flex", alignItems:"center", justifyContent:"center", zIndex:2000, padding:20, backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)" }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:620, maxHeight:"88vh", display:"flex", flexDirection:"column", boxShadow:`0 32px 80px rgba(0,0,0,${_themeMode==="dark"?0.6:0.18})` }}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
             <div style={{ fontSize:17, fontWeight:700, color:C.text }}>{showTerms==="terms" ? "📋 Nutzungsbedingungen" : "🔒 Datenschutzerklärung"}</div>
             <button style={{ background:"none", border:"none", color:C.textDim, cursor:"pointer", fontSize:22, lineHeight:1 }} onClick={()=>setShowTerms(false)}>✕</button>
@@ -581,7 +582,10 @@ function Layout({ page, setPage, user, onLogout, children }) {
     const next = theme === 'dark' ? 'light' : 'dark';
     _themeMode = next;
     Object.assign(C, THEMES[next]);
-    if (typeof window !== 'undefined') { try { localStorage.setItem('sp_theme', next); } catch(e) {} }
+    if (typeof window !== 'undefined') {
+      try { localStorage.setItem('sp_theme', next); } catch(e) {}
+      document.documentElement.setAttribute('data-theme', next);
+    }
     setTheme(next);
   };
   const width = useWindowSize();
@@ -985,7 +989,7 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, marginBottom: 12, letterSpacing: "0.5px", textTransform: "uppercase" }}>Mein Status</div>
                 <div style={{ marginBottom: 10 }}><span style={S.attendBadge(myP.attendance_status)}>{ATTEND_CONFIG[myP.attendance_status]?.label}</span></div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {Object.entries(ATTEND_CONFIG).map(([k,v]) => (<button key={k} style={{ padding: "5px 11px", borderRadius: 20, border: `1px solid ${myP.attendance_status===k?v.color:"#2A2A3E"}`, background: myP.attendance_status===k?v.bg:"transparent", color: myP.attendance_status===k?v.color:C.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => handleStatusChange(myP.id, k)}>{v.label}</button>))}
+                  {Object.entries(ATTEND_CONFIG).map(([k,v]) => (<button key={k} style={{ padding: "5px 11px", borderRadius: 20, border: `1px solid ${myP.attendance_status===k?v.color:C.border}`, background: myP.attendance_status===k?v.bg:"transparent", color: myP.attendance_status===k?v.color:C.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer" }} onClick={() => handleStatusChange(myP.id, k)}>{v.label}</button>))}
                 </div>
               </div>
             )}
@@ -1784,7 +1788,7 @@ function UsersPage({ users, setUsers, user: currentUser }) {
         background: value ? C.accent : C.surface, border:`1px solid ${value ? C.accent : C.border}`,
         position:"relative", transition:"background 0.2s" }}>
         <div style={{ position:"absolute", top:3, left: value ? 22 : 3, width:18, height:18,
-          borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.3)" }} />
+          borderRadius:"50%", background:"#ffffff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.3)" }} />
       </div>
     </div>
   );
@@ -1886,8 +1890,8 @@ function UsersPage({ users, setUsers, user: currentUser }) {
 
       {/* Create user modal */}
       {showModal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:20, backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)" }}>
-          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:"24px", width:"100%", maxWidth:480, boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
+        <div style={{ position:"fixed", inset:0, background:`rgba(0,0,0,${_themeMode==="dark"?0.55:0.32})`, display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:20, backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)" }}>
+          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:"24px", width:"100%", maxWidth:480, boxShadow:`0 20px 60px rgba(0,0,0,${_themeMode==="dark"?0.4:0.13})` }}>
             <div style={{ fontSize:17, fontWeight:700, marginBottom:18, color:C.text }}>Benutzer manuell anlegen</div>
             <div style={{ marginBottom:12 }}>
               <label style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:5, display:"block" }}>Name</label>
@@ -3113,7 +3117,9 @@ export default function App() {
           ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
           button:hover { opacity: 0.85; }
           a:hover { opacity: 0.75; }
+          ::placeholder { color: ${C.textDim}; opacity: 1; }
           ::selection { background: ${C.accent}; color: ${isDark ? '#000' : '#fff'}; }
+          input, textarea, select { color: ${C.text}; background-color: ${C.surfaceHi}; }
           @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
           .fadeIn { animation: fadeIn 0.2s ease; }
         `}</style>;

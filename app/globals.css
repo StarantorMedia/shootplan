@@ -8,3 +8,20 @@ body {
   background: #0A0A0F;
   color: #E8E8F0;
 }
+
+/* Light mode overrides — set by JS via data-theme attribute on <html> */
+html[data-theme="light"] body {
+  background: #F2F2F7;
+  color: #000000;
+}
+
+/* Ensure native inputs inherit colors in both themes */
+input, textarea, select {
+  color: inherit;
+}
+
+/* Scrollbar — dark */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
