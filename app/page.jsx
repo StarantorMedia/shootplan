@@ -1,8 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://xpgvsmtpcxommforzzed.supabase.co";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_f2-NADNc3LEg_Ga2KXkiXw_Zntc2xSN";
+// ── Environment variables — never hardcode secrets as fallbacks ────────────
+// These must be set in Vercel Dashboard → Settings → Environment Variables
+// NEXT_PUBLIC_ prefix = safe for browser (anon key is intentionally public)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  if (typeof window === "undefined") {
+    // Server-side: fail loudly during build if env vars are missing
+    console.error("[ShootPlan] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+}
 
 let _token = null;
 const SESSION_KEY = "sp_session";
@@ -49,6 +58,81 @@ const db = {
     const d = await r.json(); if (!r.ok) throw new Error(d?.error_description || d?.message || "Registrierung fehlgeschlagen"); return d;
   },
 };
+
+// ══════════════════════════════════════════════════════════════
+// SECURITY — Input validation, sanitization, rate limiting
+// ══════════════════════════════════════════════════════════════
+
+// ── Sanitization ─────────────────────────────────────────────
+// Strips HTML tags and trims. Prevents XSS in text rendered via dangerouslySetInnerHTML.
+// Note: React's JSX renderer escapes by default — this is defense-in-depth.
+function sanitize(val) {
+  if (typeof val !== "string") return "";
+  return val.replace(/<[^>]*>/g, "").trim().slice(0, 2000);
+}
+
+// Sanitize an object's string values (used before db.insert / db.update)
+function sanitizeObj(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = typeof v === "string" ? sanitize(v) : v;
+  }
+  return out;
+}
+
+// ── Validation ───────────────────────────────────────────────
+const V = {
+  email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((v||"").trim()),
+  password: (v) => typeof v === "string" && v.length >= 8 && v.length <= 128,
+  name: (v) => typeof v === "string" && v.trim().length >= 2 && v.trim().length <= 80,
+  text: (v, max=500) => typeof v === "string" && v.trim().length > 0 && v.length <= max,
+  textOpt: (v, max=500) => !v || (typeof v === "string" && v.length <= max),
+  number: (v, min=0, max=999999) => {
+    const n = parseFloat(v);
+    return !isNaN(n) && n >= min && n <= max;
+  },
+  date: (v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v),
+  url: (v) => {
+    if (!v) return true; // optional
+    try { const u = new URL(v); return ["https:","http:"].includes(u.protocol); }
+    catch { return false; }
+  },
+  // Returns first failing field name or null if all OK
+  check: (rules) => {
+    for (const [field, ok, msg] of rules) {
+      if (!ok) return msg || `Ungültiges Feld: ${field}`;
+    }
+    return null;
+  },
+};
+
+// ── Client-side rate limiting ─────────────────────────────────
+// Prevents rapid repeated submissions (e.g. login brute-force, spam)
+// Uses in-memory map — resets on page reload (not a server-side defense,
+// but provides UX-layer protection and reduces load on Supabase).
+var _rateLimits = {};
+function rateLimit(key, maxCalls, windowMs) {
+  const now = Date.now();
+  if (!_rateLimits[key]) _rateLimits[key] = [];
+  // Remove entries outside the window
+  _rateLimits[key] = _rateLimits[key].filter(t => now - t < windowMs);
+  if (_rateLimits[key].length >= maxCalls) {
+    const waitSec = Math.ceil((windowMs - (now - _rateLimits[key][0])) / 1000);
+    return `Zu viele Versuche. Bitte ${waitSec}s warten.`;
+  }
+  _rateLimits[key].push(now);
+  return null; // OK
+}
+
+// Convenience wrappers for common limits
+var RL = {
+  login:    () => rateLimit("login",    5,  60000),  // 5 attempts / 60s
+  register: () => rateLimit("register", 3,  300000), // 3 attempts / 5min
+  form:     (k) => rateLimit("form_"+k, 10, 60000),  // 10 submits / 60s
+  notify:   (k) => rateLimit("notif_"+k, 20, 60000), // 20 notifications / 60s
+};
+
 
 const STATUS_CONFIG = {
   planned:   { label: "Geplant",   color: "#FF9F0A", bg: "rgba(255,159,10,0.15)",  dot: "#FF9F0A" },
@@ -182,10 +266,16 @@ function AuthPage({ onLogin }) {
   const [error, setError] = useState(""); const [success, setSuccess] = useState(""); const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) { setError("Bitte E-Mail und Passwort eingeben"); return; }
+    const rlErr = RL.login();
+    if (rlErr) { setError(rlErr); return; }
+    const valErr = V.check([
+      ["E-Mail",   V.email(email),          "Ungültige E-Mail-Adresse"],
+      ["Passwort", V.password(password),    "Passwort muss 8–128 Zeichen haben"],
+    ]);
+    if (valErr) { setError(valErr); return; }
     setLoading(true); setError("");
     try {
-      const data = await db.signIn(email, password);
+      const data = await db.signIn(email.trim().toLowerCase(), password);
       db.setToken(data.access_token);
       const profiles = await db.select("users", `email=eq.${encodeURIComponent(email)}`);
       if (!profiles.length) throw new Error("Kein Benutzerprofil gefunden.");
@@ -196,12 +286,18 @@ function AuthPage({ onLogin }) {
   };
 
   const handleRegister = async () => {
-    if (!name || !email || !password) { setError("Alle Felder sind Pflicht"); return; }
-    if (password.length < 8) { setError("Passwort muss mindestens 8 Zeichen haben"); return; }
+    const rlErr = RL.register();
+    if (rlErr) { setError(rlErr); return; }
+    const valErr = V.check([
+      ["Name",     V.name(name),           "Name muss 2–80 Zeichen haben"],
+      ["E-Mail",   V.email(email),         "Ungültige E-Mail-Adresse"],
+      ["Passwort", V.password(password),   "Passwort muss 8–128 Zeichen haben"],
+    ]);
+    if (valErr) { setError(valErr); return; }
     setLoading(true); setError("");
     try {
-      await db.signUp(email, password);
-      await db.insert("users", { name, email, role, is_admin: false, is_approved: false, must_change_password: false });
+      await db.signUp(email.trim().toLowerCase(), password);
+      await db.insert("users", sanitizeObj({ name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false }));
       try { const admins = await db.select("users", "is_admin=eq.true&is_approved=eq.true"); for (const adm of admins) { notify("new_user_registration", adm.email, { user_name: name, user_email: email, user_role: role }); } } catch(e) {}
       setSuccess("Account erstellt! Du wirst benachrichtigt sobald ein Admin deinen Account freigibt.");
       setMode("login"); setName(""); setPassword("");
@@ -258,7 +354,7 @@ function AuthPage({ onLogin }) {
 
 function ChangePasswordPage({ user, onDone }) {
   const [pw, setPw] = useState(""); const [pw2, setPw2] = useState(""); const [error, setError] = useState("");
-  const handleSave = async () => { if (pw.length < 8) { setError("Mindestens 8 Zeichen"); return; } if (pw !== pw2) { setError("Passwörter stimmen nicht überein"); return; } try { await db.update("users", { must_change_password: false }, `id=eq.${user.id}`); onDone(); } catch (e) { setError(e.message); } };
+  const handleSave = async () => { const cpwErr = V.check([["Passwort", V.password(pw), "Passwort muss 8–128 Zeichen haben"], ["Wiederholung", pw === pw2, "Passwörter stimmen nicht überein"]]); if (cpwErr) { setError(cpwErr); return; } try { await db.update("users", { must_change_password: false }, `id=eq.${user.id}`); onDone(); } catch (e) { setError(e.message); } };
   return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, fontFamily: "inherit" }}>
       <div style={{ width: "100%", maxWidth: 380 }}>
@@ -562,12 +658,12 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
   };
   const addRentalEquip = async () => {
     if (!rentalForm.name) return;
-    try { const item = await db.insert("shoot_rental_equipment", { ...rentalForm, shoot_id: shoot.id, daily_rate: parseFloat(rentalForm.daily_rate)||0, quantity: parseInt(rentalForm.quantity)||1 }); const nl = [...rentalEquip, item]; setRentalEquip(nl); await syncBudget(nl); setShowAddRental(false); setRentalForm({ name: "", category: "", daily_rate: "", quantity: 1, notes: "" }); } catch (e) { alert(e.message); }
+    try { const item = await db.insert("shoot_rental_equipment", sanitizeObj({ ...rentalForm, shoot_id: shoot.id, daily_rate: parseFloat(rentalForm.daily_rate)||0, quantity: parseInt(rentalForm.quantity)||1 })); const nl = [...rentalEquip, item]; setRentalEquip(nl); await syncBudget(nl); setShowAddRental(false); setRentalForm({ name: "", category: "", daily_rate: "", quantity: 1, notes: "" }); } catch (e) { alert(e.message); }
   };
   const removeRentalEquip = async (id) => { try { await db.remove("shoot_rental_equipment", `id=eq.${id}`); const nl = rentalEquip.filter(r => r.id !== id); setRentalEquip(nl); await syncBudget(nl); } catch (e) { alert(e.message); } };
   const updateRentalField = async (id, field, val) => { const nl = rentalEquip.map(r => r.id === id ? { ...r, [field]: val } : r); setRentalEquip(nl); try { await db.update("shoot_rental_equipment", { [field]: val }, `id=eq.${id}`); await syncBudget(nl); } catch (e) {} };
   const myShootEquipIds = new Set(shootEquip.filter(e => e.user_id === user.id).map(e => e.user_equipment_id));
-  const addMyEquipToShoot = async (eq) => { if (myShootEquipIds.has(eq.id)) return; try { const item = await db.insert("shoot_equipment", { shoot_id: shoot.id, user_id: user.id, user_equipment_id: eq.id, name: eq.name, category: eq.category, notes: eq.notes }); setShootEquip(p => [...p, item]); } catch (e) { alert(e.message); } };
+  const addMyEquipToShoot = async (eq) => { if (myShootEquipIds.has(eq.id)) return; try { const item = await db.insert("shoot_equipment", sanitizeObj({ shoot_id: shoot.id, user_id: user.id, user_equipment_id: eq.id, name: eq.name, category: eq.category, notes: eq.notes })); setShootEquip(p => [...p, item]); } catch (e) { alert(e.message); } };
   const removeMyEquipFromShoot = async (id) => { try { await db.remove("shoot_equipment", `id=eq.${id}`); setShootEquip(p => p.filter(e => e.id !== id)); } catch (e) { alert(e.message); } };
 
   const sp = participants.filter(p => p.shoot_id === shoot.id);
@@ -595,15 +691,15 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
   const nextShotNum = (part, scene) => { const nums = shots.filter(s => s.part_num===part && s.scene_num===scene).map(s => parseInt(s.shot_num)||1); return nums.length ? Math.max(...nums)+1 : 1; };
   const addShot = async (partNum=1, sceneNum=1) => {
     const shotNum = nextShotNum(partNum, sceneNum);
-    try { const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: shotNum, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
+    try { const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: shotNum, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" })); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
   };
   const addScene = async (partNum=1) => {
     const sceneNum = nextSceneNum(partNum) + (shots.filter(s=>s.part_num===partNum).length ? 1 : 0);
-    try { const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
+    try { const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" })); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
   };
   const addPart = async () => {
     const partNum = nextPartNum() + (shots.length ? 1 : 0);
-    try { const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: 1, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
+    try { const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: 1, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" })); setShotlist(prev => [...prev, s]); } catch (e) { alert(e.message); }
   };
   const updateShot = async (id, field, val) => { setShotlist(prev => prev.map(s => s.id === id ? { ...s, [field]: val } : s)); try { await db.update("shotlist", { [field]: val }, `id=eq.${id}`); } catch (e) {} };
   const deleteShot = async (id) => { try { await db.remove("shotlist", `id=eq.${id}`); setShotlist(prev => prev.filter(s => s.id !== id)); } catch (e) { alert(e.message); } };
@@ -989,21 +1085,21 @@ function ShotlistTab({ shots, shoot, user, canEdit, updateShot, deleteShot, setS
   const addShotToScene = async (partNum, sceneNum) => {
     const shotNum = nextShotNum(partNum, sceneNum);
     try {
-      const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: shotNum, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" });
+      const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: shotNum, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }));
       setShotlist(prev => [...prev, s]);
     } catch(e) { alert(e.message); }
   };
   const addSceneToPart = async (partNum) => {
     const sceneNum = nextSceneNum(partNum);
     try {
-      const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" });
+      const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: sceneNum, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }));
       setShotlist(prev => [...prev, s]);
     } catch(e) { alert(e.message); }
   };
   const addNewPart = async () => {
     const partNum = nextPartNum();
     try {
-      const s = await db.insert("shotlist", { shoot_id: shoot.id, part_num: partNum, scene_num: 1, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" });
+      const s = await db.insert("shotlist", sanitizeObj({ shoot_id: shoot.id, part_num: partNum, scene_num: 1, shot_num: 1, title: "", description: "", camera_setting: "", duration: "", status: "open", image_url: "" }));
       setShotlist(prev => [...prev, s]);
     } catch(e) { alert(e.message); }
   };
@@ -1214,9 +1310,18 @@ function NewShootPage({ user, clients, setPage, onSave }) {
   const [form, setForm] = useState({ title: "", location: "", date_start: "", date_end: "", start_time: "09:00", end_time: "18:00", budget: "", notes: "", status: "planned", client_id: "" });
   const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
   const handleSave = async () => {
-    if (!form.title || !form.date_start) { setError("Titel und Startdatum sind Pflichtfelder"); return; }
+    const rlErr = RL.form("new_shoot");
+    if (rlErr) { setError(rlErr); return; }
+    const shootErr = V.check([
+      ["Titel",      V.text(form.title, 120),          "Titel ist Pflicht (max. 120 Zeichen)"],
+      ["Startdatum", V.date(form.date_start) && form.date_start, "Startdatum ist Pflicht"],
+      ["Enddatum",   !form.date_end || V.date(form.date_end), "Ungültiges Enddatum"],
+      ["Budget",     !form.budget || V.number(form.budget, 0, 9999999), "Ungültiges Budget"],
+      ["Notizen",    V.textOpt(form.notes, 2000),       "Notizen max. 2000 Zeichen"],
+    ]);
+    if (shootErr) { setError(shootErr); return; }
     setSaving(true);
-    try { const shoot = await db.insert("shoots", { ...form, date_end: form.date_end || form.date_start, budget: form.budget || null, client_id: form.client_id || null, created_by: user.id, shared_links: "[]" }); onSave(shoot); }
+    try { const shoot = await db.insert("shoots", sanitizeObj({ ...form, date_end: form.date_end || form.date_start, budget: form.budget || null, client_id: form.client_id || null, created_by: user.id, shared_links: "[]" })); onSave(shoot); }
     catch (e) { setError(e.message); }
     setSaving(false);
   };
@@ -1519,7 +1624,12 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
     if (!networkForm.name) return;
     setSaving(true);
     try {
-      const nw = await db.insert("networks", { ...networkForm, created_by: user.id });
+      const netErr = V.check([
+      ["Name", V.text(networkForm.name, 80), "Netzwerk-Name ist Pflicht (max. 80 Zeichen)"],
+      ["Beschreibung", V.textOpt(networkForm.description, 300), "Beschreibung max. 300 Zeichen"],
+    ]);
+    if (netErr) { alert(netErr); setSaving(false); return; }
+    const nw = await db.insert("networks", sanitizeObj({ ...networkForm, created_by: user.id }));
       const mem = await db.insert("network_members", { network_id: nw.id, user_id: user.id, role: "admin", status: "active" });
       setNetworks(p => [...p, nw]);
       setAllMembers(p => [...p, mem]);
@@ -1997,10 +2107,13 @@ function ProfilePage({ user, setUser }) {
   const [saving, setSaving] = useState(false);
 
   const handleSaveName = async () => {
-    if (!nameForm.name.trim()) return;
+    const nameErr = V.check([["Name", V.name(nameForm.name), "Name muss 2–80 Zeichen haben"]]);
+    if (nameErr) { setNameMsg(nameErr); return; }
+    const rlErr = RL.form("profile");
+    if (rlErr) { setNameMsg(rlErr); return; }
     setSaving(true); setNameMsg("");
     try {
-      await db.update("users", { name: nameForm.name.trim() }, `id=eq.${user.id}`);
+      await db.update("users", sanitizeObj({ name: nameForm.name.trim() }), `id=eq.${user.id}`);
       setUser(u => {
         const updated = { ...u, name: nameForm.name.trim() };
         try { const s = localStorage.getItem(SESSION_KEY); if(s){ const d=JSON.parse(s); localStorage.setItem(SESSION_KEY, JSON.stringify({...d, profile: updated})); } } catch(e){}
@@ -2107,10 +2220,16 @@ function MarketplacePage({ user, users, userEquipment }) {
   const myOutgoingRequests = requests.filter(r => r.requester_id === user.id);
 
   const handleAddListing = async () => {
-    if (!form.name || !form.daily_rate) return;
     setSaving(true);
+    const eqErr = V.check([
+      ["Name",       V.text(form.name, 100),         "Bezeichnung ist Pflicht (max. 100 Zeichen)"],
+      ["CHF/Tag",    V.number(form.daily_rate, 0, 9999), "Ungültiger Tagespreis (0–9999)"],
+      ["Beschreibung", V.textOpt(form.description, 500), "Beschreibung max. 500 Zeichen"],
+      ["URL",        V.url(form.contact_info),        "Ungültige Kontakt-URL"],
+    ]);
+    if (eqErr) { alert(eqErr); setSaving(false); return; }
     try {
-      const item = await db.insert("equipment_listings", { ...form, owner_id: user.id, daily_rate: parseFloat(form.daily_rate) || 0, weekly_rate: parseFloat(form.weekly_rate) || 0, is_available: true });
+      const item = await db.insert("equipment_listings", sanitizeObj({ ...form, owner_id: user.id, daily_rate: parseFloat(form.daily_rate) || 0, weekly_rate: parseFloat(form.weekly_rate) || 0, is_available: true }));
       setListings(p => [...p, item]);
       setMyListings(p => [...p, item]);
       setShowAddModal(false); setForm({ name: "", category: "", description: "", daily_rate: "", weekly_rate: "", location: "", contact_info: "" });
@@ -2136,7 +2255,15 @@ function MarketplacePage({ user, users, userEquipment }) {
   };
 
   const handleSendRequest = async () => {
-    if (!showRequestModal || !reqForm.date_from) return;
+    if (!showRequestModal) return;
+    const rlErr = RL.form("rental_request");
+    if (rlErr) { alert(rlErr); return; }
+    const reqErr = V.check([
+      ["Von-Datum", V.date(reqForm.date_from) && reqForm.date_from, "Bitte Startdatum wählen"],
+      ["Bis-Datum", V.date(reqForm.date_to),                        "Ungültiges Enddatum"],
+      ["Nachricht", V.textOpt(reqForm.message, 500),                "Nachricht max. 500 Zeichen"],
+    ]);
+    if (reqErr) { alert(reqErr); return; }
     try {
       const req = await db.insert("equipment_rental_requests", { listing_id: showRequestModal.id, requester_id: user.id, message: reqForm.message, date_from: reqForm.date_from, date_to: reqForm.date_to || reqForm.date_from, status: "pending" });
       setRequests(p => [...p, req]);
