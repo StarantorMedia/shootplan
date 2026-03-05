@@ -22,7 +22,7 @@ function checkRateLimit(ip: string, maxReqs = 60, windowMs = 60_000): boolean {
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 const VALID_TYPES = new Set([
   "equipment_request", "new_user_registration", "network_invite",
-  "shoot_application", "new_shoot_published", "admin_broadcast",
+  "shoot_application", "new_shoot_published", "admin_broadcast", "account_approved",
 ]);
 
 function sanitizeStr(v: unknown, max = 200): string {
@@ -146,6 +146,15 @@ function getTemplate(type: string, data: Record<string, string>) {
           <h2>Neuer Shoot ausgeschrieben</h2>
           <p><span class="hi">${escapeHtml(data.publisher_name)}</span> in <span class="tag">${escapeHtml(data.network_name)}</span></p>
           <p><span class="tag">${escapeHtml(data.shoot_title)}</span>${data.shoot_date ? ` &middot; ${escapeHtml(data.shoot_date)}` : ""}</p>
+        `),
+      };
+    case "account_approved":
+      return {
+        subject: "Dein ShootPlan-Account wurde freigeschaltet",
+        html: baseTemplate(`
+          <h2>Account freigeschaltet</h2>
+          <p>Hallo <span class="hi">${escapeHtml(data.user_name || "")}</span>,</p>
+          <p>dein Account wurde von einem Administrator genehmigt. Du kannst dich jetzt in der App anmelden.</p>
         `),
       };
     default:

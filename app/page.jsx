@@ -1828,6 +1828,7 @@ function UsersPage({ users, setUsers, user: currentUser }) {
     try {
       await db.update("users", { is_approved: true }, `id=eq.${u.id}`);
       setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_approved: true } : x));
+      notify("account_approved", u.email, { user_name: u.name });
     } catch(e) { alert(e.message); }
   };
 
