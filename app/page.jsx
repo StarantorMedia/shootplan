@@ -465,7 +465,10 @@ function AuthPage({ onLogin }) {
     try {
       const signUpData = await db.signUp(email.trim().toLowerCase(), password);
       const authId = signUpData.user?.id;
+      // Set token so RLS auth.uid() IS NOT NULL passes for the insert
+      if (signUpData.access_token) db.setToken(signUpData.access_token);
       await db.insert("users", sanitizeObj({ id: authId || undefined, name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false, terms_accepted_at: new Date().toISOString() }));
+      db.clearToken();
       try { const admins = await db.select("users", "is_admin=eq.true&is_approved=eq.true"); for (const adm of admins) { notify("new_user_registration", adm.email, { user_name: name, user_email: email, user_role: role }); } } catch(e) {}
       setSuccess("Account erstellt! Du wirst benachrichtigt sobald ein Admin deinen Account freigibt.");
       setMode("login"); setName(""); setPassword("");
