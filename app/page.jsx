@@ -20,13 +20,18 @@ const SESSION_KEY = "sp_session";
 async function notify(type, to, data) {
   if (!to) return;
   try {
-    await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-notification`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${_token || SUPABASE_ANON_KEY}`,
+      },
       body: JSON.stringify({ type, to, data }),
     });
+    if (!res.ok) console.warn("[notify] HTTP", res.status, await res.text().catch(()=>""));
   } catch (e) {
-    console.warn("Notification skipped:", e.message);
+    console.warn("[notify] skipped:", e.message);
   }
 }
 const getHeaders = () => ({ "apikey": SUPABASE_ANON_KEY, "Authorization": `Bearer ${_token || SUPABASE_ANON_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation" });
