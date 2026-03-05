@@ -93,6 +93,7 @@ const V = {
     return !isNaN(n) && n >= min && n <= max;
   },
   date: (v) => !v || /^\d{4}-\d{2}-\d{2}$/.test(v),
+  uuid: (v) => typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v),
   url: (v) => {
     if (!v) return true; // optional
     try { const u = new URL(v); return ["https:","http:"].includes(u.protocol); }
@@ -260,10 +261,149 @@ function useWindowSize() {
 // ============================================================
 // AUTH PAGES
 // ============================================================
+// ─── Swiss-standard legal documents ─────────────────────────────────────────
+function TermsContent() {
+  const s = { h: { fontSize:14, fontWeight:700, color:"#FFFFFF", marginTop:20, marginBottom:6 }, p: { fontSize:13, color:"#AEAEB2", lineHeight:1.7, marginBottom:8 } };
+  return (
+    <div>
+      <p style={{ color:"#FFFFFF", fontWeight:700, fontSize:15, marginBottom:4 }}>Nutzungsbedingungen — ShootPlan Production Suite</p>
+      <p style={{ color:"#636366", fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · Anbieter: Starantor Media, Schweiz</p>
+      <p style={s.h}>1. Geltungsbereich</p>
+      <p style={s.p}>Diese Nutzungsbedingungen regeln die Nutzung der ShootPlan Production Suite durch registrierte Benutzer. Mit der Registrierung akzeptierst du diese Bedingungen vollumfänglich.</p>
+      <p style={s.h}>2. Leistungsumfang</p>
+      <p style={s.p}>ShootPlan stellt eine webbasierte Plattform zur Organisation von Film- und Fotoproduktionen bereit, einschliesslich Shoot-Verwaltung, Shotlisten, Equipment-Tracking, Netzwerkfunktionen und E-Mail-Benachrichtigungen.</p>
+      <p style={s.h}>3. Registrierung & Zugangsdaten</p>
+      <p style={s.p}>Du bist verpflichtet, bei der Registrierung wahrheitsgemässe Angaben zu machen. Deine Zugangsdaten sind vertraulich zu halten. Du bist für alle Aktivitäten unter deinem Account verantwortlich.</p>
+      <p style={s.h}>4. Nutzungsregeln</p>
+      <p style={s.p}>Die Plattform darf ausschliesslich für legale Zwecke genutzt werden. Verboten sind insbesondere das Einbringen rechtswidriger Inhalte, Missbrauch der Infrastruktur, unbefugter Zugriff auf fremde Daten sowie jede Form von Systemmanipulation.</p>
+      <p style={s.h}>5. Inhalte & Eigentum</p>
+      <p style={s.p}>Du behältst das Eigentum an deinen Inhalten. Du räumst Starantor Media das nicht-exklusive Recht ein, diese zur Bereitstellung des Dienstes zu verarbeiten und zu speichern.</p>
+      <p style={s.h}>6. Haftungsbeschränkung</p>
+      <p style={s.p}>Die Haftung von Starantor Media ist auf Vorsatz und grobe Fahrlässigkeit beschränkt. Für mittelbare Schäden, entgangenen Gewinn oder Datenverlust wird keine Haftung übernommen, soweit gesetzlich zulässig.</p>
+      <p style={s.h}>7. Änderungen</p>
+      <p style={s.p}>Wesentliche Änderungen dieser Bedingungen werden per E-Mail oder beim nächsten Login mitgeteilt. Die weitere Nutzung gilt als Zustimmung.</p>
+      <p style={s.h}>8. Anwendbares Recht & Gerichtsstand</p>
+      <p style={s.p}>Es gilt Schweizer Recht. Gerichtsstand ist der Sitz von Starantor Media in der Schweiz. Die Anwendung des UN-Kaufrechts (CISG) ist ausgeschlossen.</p>
+      <p style={s.h}>9. Kontakt</p>
+      <p style={s.p}>Starantor Media · Schweiz · info@starantor.com</p>
+    </div>
+  );
+}
+
+function PrivacyContent() {
+  const s = { h: { fontSize:14, fontWeight:700, color:"#FFFFFF", marginTop:20, marginBottom:6 }, p: { fontSize:13, color:"#AEAEB2", lineHeight:1.7, marginBottom:8 } };
+  return (
+    <div>
+      <p style={{ color:"#FFFFFF", fontWeight:700, fontSize:15, marginBottom:4 }}>Datenschutzerklärung — ShootPlan Production Suite</p>
+      <p style={{ color:"#636366", fontSize:11, marginBottom:20 }}>Version 1.0 · Stand: Januar 2025 · gemäss Schweizer nDSG & DSGVO</p>
+      <p style={s.h}>1. Verantwortliche Stelle</p>
+      <p style={s.p}>Starantor Media · Schweiz · info@starantor.com · shootplan.starantor.com</p>
+      <p style={s.h}>2. Erhobene Daten</p>
+      <p style={s.p}>Wir erheben Name, E-Mail-Adresse, Rolle (Registrierung); von dir erstellte Inhalte (Shoots, Shotlisten, Equipment, Netzwerke); technische Zugriffsdaten (IP, Browser, Zeitstempel).</p>
+      <p style={s.h}>3. Zweck der Verarbeitung</p>
+      <p style={s.p}>Deine Daten werden ausschliesslich zur Bereitstellung der Plattformfunktionen, Kontoverwaltung, Versendung von Benachrichtigungen sowie zur Sicherstellung des Betriebs verwendet.</p>
+      <p style={s.h}>4. Rechtsgrundlage</p>
+      <p style={s.p}>Die Verarbeitung erfolgt auf Basis deiner Einwilligung (Registrierung), zur Vertragserfüllung sowie auf Grundlage berechtigter Interessen. Es gilt das Schweizer nDSG sowie ergänzend die DSGVO für EU-Nutzende.</p>
+      <p style={s.h}>5. Drittanbieter & Auftragsverarbeiter</p>
+      <p style={s.p}><strong style={{color:"#fff"}}>Supabase</strong> (Datenbankhosting, EU – SCC); <strong style={{color:"#fff"}}>Vercel</strong> (Hosting, USA – SCC); <strong style={{color:"#fff"}}>Resend</strong> (E-Mail-Versand). Mit allen Auftragsverarbeitern bestehen Verträge zur Auftragsverarbeitung.</p>
+      <p style={s.h}>6. Datenspeicherung & Löschung</p>
+      <p style={s.p}>Deine Daten werden für die Dauer der aktiven Nutzung gespeichert. Nach Account-Löschung werden personenbezogene Daten innerhalb von 30 Tagen gelöscht, soweit keine gesetzlichen Aufbewahrungspflichten bestehen.</p>
+      <p style={s.h}>7. Deine Rechte (nDSG & DSGVO)</p>
+      <p style={s.p}>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenportabilität und Widerspruch. Anfragen an: info@starantor.com</p>
+      <p style={s.h}>8. Cookies & Lokaler Speicher</p>
+      <p style={s.p}>Wir verwenden ausschliesslich technisch notwendige Browserdaten (localStorage) zur Sitzungsverwaltung. Keine Tracking-Cookies, keine Analyse-Tools.</p>
+      <p style={s.h}>9. Beschwerderecht</p>
+      <p style={s.p}>Du kannst Beschwerde beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB) einreichen: edoeb.admin.ch</p>
+    </div>
+  );
+}
+
+// TermsAcceptanceModal — shown after login for users who haven't accepted yet
+function TermsAcceptanceModal({ user, onAccept }) {
+  const [tab, setTab] = useState("terms");
+  const [readTerms, setReadTerms] = useState(false);
+  const [readPrivacy, setReadPrivacy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const canAccept = readTerms && readPrivacy;
+
+  const markRead = (e) => {
+    const el = e.target;
+    if (el.scrollHeight - el.scrollTop <= el.clientHeight + 80) {
+      if (tab === "terms") setReadTerms(true);
+      else setReadPrivacy(true);
+    }
+  };
+
+  const handleAccept = async () => {
+    setSaving(true);
+    try {
+      await db.update("users", { terms_accepted_at: new Date().toISOString() }, `id=eq.${user.id}`);
+      onAccept();
+    } catch(e) { alert("Fehler: " + e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:3000, padding:20, backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)" }}>
+      <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:640, maxHeight:"92vh", display:"flex", flexDirection:"column", boxShadow:"0 40px 100px rgba(0,0,0,0.7)" }}>
+        {/* Header */}
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:20, fontWeight:700, color:C.text, marginBottom:4 }}>Nutzungsbedingungen & Datenschutz</div>
+          <div style={{ fontSize:13, color:C.textDim }}>Bitte lies und akzeptiere beide Dokumente um ShootPlan zu verwenden.</div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display:"flex", gap:6, marginBottom:14, background:C.surfaceHi, borderRadius:10, padding:4 }}>
+          {[{k:"terms",l:"📋 Nutzungsbedingungen",r:readTerms},{k:"privacy",l:"🔒 Datenschutz",r:readPrivacy}].map(t => (
+            <button key={t.k} onClick={()=>setTab(t.k)}
+              style={{ flex:1, padding:"8px 10px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:"inherit", fontWeight:600, fontSize:12,
+                background:tab===t.k ? C.surface : "transparent",
+                color:tab===t.k ? C.text : C.textDim,
+                boxShadow:tab===t.k ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:6 }}>
+              {t.r && <span style={{ color:C.green, fontSize:14 }}>✓</span>}
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {/* Scrollable content */}
+        <div onScroll={markRead} style={{ flex:1, overflowY:"auto", marginBottom:16, paddingRight:4 }}>
+          {tab==="terms" ? <TermsContent /> : <PrivacyContent />}
+          <div style={{ textAlign:"center", padding:"20px 0 8px", fontSize:11, color:C.textDim }}>
+            {(tab==="terms" ? readTerms : readPrivacy) ? <span style={{color:C.green}}>✓ Gelesen</span> : "↓ Bis zum Ende scrollen"}
+          </div>
+        </div>
+
+        {/* Progress indicators */}
+        <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+          {[{r:readTerms,l:"Nutzungsbedingungen"},{r:readPrivacy,l:"Datenschutz"}].map((item,i) => (
+            <div key={i} style={{ flex:1, display:"flex", alignItems:"center", gap:8, padding:"10px 12px", borderRadius:10,
+              background:item.r ? "rgba(48,209,88,0.08)" : C.surfaceHi,
+              border:`1px solid ${item.r ? "#30D15844" : C.border}` }}>
+              <span style={{ fontSize:15 }}>{item.r ? "✅" : "○"}</span>
+              <span style={{ fontSize:12, color:item.r ? C.green : C.textDim }}>{item.l}</span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          style={{ ...S.btn(canAccept?"primary":"outline"), justifyContent:"center", padding:"13px", opacity:canAccept?1:0.5 }}
+          onClick={handleAccept} disabled={!canAccept||saving}>
+          {saving ? "Wird gespeichert..." : canAccept ? "✅ Beide Dokumente akzeptieren & fortfahren" : "Bitte beide Dokumente lesen"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 function AuthPage({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [name, setName] = useState(""); const [role, setRole] = useState("crew");
   const [error, setError] = useState(""); const [success, setSuccess] = useState(""); const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTerms, setShowTerms] = useState(false); // "terms" | "privacy" | false
 
   const handleLogin = async () => {
     const rlErr = RL.login();
@@ -292,12 +432,13 @@ function AuthPage({ onLogin }) {
       ["Name",     V.name(name),           "Name muss 2–80 Zeichen haben"],
       ["E-Mail",   V.email(email),         "Ungültige E-Mail-Adresse"],
       ["Passwort", V.password(password),   "Passwort muss 8–128 Zeichen haben"],
+      ["AGB",      termsAccepted,          "Bitte akzeptiere die Nutzungsbedingungen und Datenschutzerklärung"],
     ]);
     if (valErr) { setError(valErr); return; }
     setLoading(true); setError("");
     try {
       await db.signUp(email.trim().toLowerCase(), password);
-      await db.insert("users", sanitizeObj({ name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false }));
+      await db.insert("users", sanitizeObj({ name: name.trim(), email: email.trim().toLowerCase(), role, is_admin: false, is_approved: false, must_change_password: false, terms_accepted_at: new Date().toISOString() }));
       try { const admins = await db.select("users", "is_admin=eq.true&is_approved=eq.true"); for (const adm of admins) { notify("new_user_registration", adm.email, { user_name: name, user_email: email, user_role: role }); } } catch(e) {}
       setSuccess("Account erstellt! Du wirst benachrichtigt sobald ein Admin deinen Account freigibt.");
       setMode("login"); setName(""); setPassword("");
@@ -306,6 +447,7 @@ function AuthPage({ onLogin }) {
   };
 
   return (
+    <>
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif" }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
@@ -344,11 +486,47 @@ function AuthPage({ onLogin }) {
               </select>
             </div>
             <div style={{ fontSize: 12, color: C.textDim, marginBottom: 16, padding: "10px 12px", background: "rgba(99,102,241,0.06)", borderRadius: 6 }}>ℹ️ Dein Account wird nach der Registrierung von einem Admin freigeschaltet.</div>
-            <button style={{ ...S.btn("primary"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={handleRegister} disabled={loading}>{loading ? "Registrieren..." : "Account erstellen"}</button>
+            {/* Terms acceptance checkbox */}
+            <div style={{ marginBottom:16, padding:"12px 14px", background:C.surfaceHi, borderRadius:10, border:`1px solid ${termsAccepted ? C.green+"55" : C.border}`, transition:"border-color 0.15s" }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:10 }}>
+                <input type="checkbox" id="cb_terms" checked={termsAccepted} onChange={e=>setTermsAccepted(e.target.checked)}
+                  style={{ marginTop:2, flexShrink:0, accentColor:C.accent, width:15, height:15, cursor:"pointer" }} />
+                <label htmlFor="cb_terms" style={{ fontSize:12, color:C.textMid, cursor:"pointer", lineHeight:1.6, userSelect:"none" }}>
+                  Ich akzeptiere die{" "}
+                  <span style={{ color:C.accent, textDecoration:"underline", cursor:"pointer" }} onClick={e=>{e.preventDefault();e.stopPropagation();setShowTerms("terms");}}>Nutzungsbedingungen</span>
+                  {" "}und die{" "}
+                  <span style={{ color:C.accent, textDecoration:"underline", cursor:"pointer" }} onClick={e=>{e.preventDefault();e.stopPropagation();setShowTerms("privacy");}}>Datenschutzerklärung</span>
+                  {" "}der ShootPlan Production Suite.
+                </label>
+              </div>
+            </div>
+            <button style={{ ...S.btn(termsAccepted?"primary":"outline"), width:"100%", justifyContent:"center", padding:"12px", opacity:termsAccepted?1:0.55 }}
+              onClick={handleRegister} disabled={loading||!termsAccepted}>
+              {loading ? "Registrieren..." : "Account erstellen"}
+            </button>
           </>)}
         </div>
       </div>
     </div>
+
+    {/* Terms / Privacy Modal — rendered outside main div so it overlays correctly */}
+    {showTerms && (
+      <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.8)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:2000, padding:20, backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)" }}>
+        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:20, padding:28, width:"100%", maxWidth:620, maxHeight:"88vh", display:"flex", flexDirection:"column", boxShadow:"0 32px 80px rgba(0,0,0,0.6)" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <div style={{ fontSize:17, fontWeight:700, color:C.text }}>{showTerms==="terms" ? "📋 Nutzungsbedingungen" : "🔒 Datenschutzerklärung"}</div>
+            <button style={{ background:"none", border:"none", color:C.textDim, cursor:"pointer", fontSize:22, lineHeight:1 }} onClick={()=>setShowTerms(false)}>✕</button>
+          </div>
+          <div style={{ flex:1, overflowY:"auto", marginBottom:20 }}>
+            {showTerms==="terms" ? <TermsContent /> : <PrivacyContent />}
+          </div>
+          <button style={{ ...S.btn("primary"), justifyContent:"center" }} onClick={()=>{ setTermsAccepted(true); setShowTerms(false); }}>
+            ✅ Gelesen & Akzeptiert
+          </button>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -676,15 +854,16 @@ function ShootDetail({ shoot, setShoot, participants, setParticipants, shotlist,
   const links = (() => { try { return JSON.parse(shoot.shared_links || "[]"); } catch { return []; } })();
 
   const handleSave = async () => {
+    if (!canEditShoot) return;
     setSaving(true);
-    try { await db.update("shoots", { title: form.title, location: form.location, date_start: form.date_start, date_end: form.date_end || form.date_start, start_time: form.start_time, end_time: form.end_time, budget: form.budget || null, notes: form.notes, status: form.status, client_id: form.client_id || null, shared_links: form.shared_links || "[]" }, `id=eq.${shoot.id}`); setShoot({ ...shoot, ...form }); setEditMode(false); } catch (e) { alert(e.message); }
+    try { await db.update("shoots", sanitizeObj({ title: form.title, location: form.location, date_start: form.date_start, date_end: form.date_end || form.date_start, start_time: form.start_time, end_time: form.end_time, budget: form.budget || null, notes: form.notes, status: form.status, client_id: form.client_id || null, shared_links: form.shared_links || "[]" }), `id=eq.${shoot.id}`); setShoot({ ...shoot, ...form }); setEditMode(false); } catch (e) { alert(e.message); }
     setSaving(false);
   };
-  const handleAddLink = async () => { if (!linkForm.url) return; const updated = JSON.stringify([...links, { ...linkForm, id: Date.now() }]); try { await db.update("shoots", { shared_links: updated }, `id=eq.${shoot.id}`); setShoot({ ...shoot, shared_links: updated }); setForm(f => ({ ...f, shared_links: updated })); setShowAddLink(false); setLinkForm({ label: "", url: "", type: "drive" }); } catch (e) { alert(e.message); } };
-  const handleRemoveLink = async (id) => { const updated = JSON.stringify(links.filter(l => l.id !== id)); try { await db.update("shoots", { shared_links: updated }, `id=eq.${shoot.id}`); setShoot({ ...shoot, shared_links: updated }); setForm(f => ({ ...f, shared_links: updated })); } catch (e) { alert(e.message); } };
+  const handleAddLink = async () => { if (!linkForm.url) return; if (!V.url(linkForm.url)) { alert("Bitte eine gültige URL eingeben (https://...)"); return; } const updated = JSON.stringify([...links, { ...linkForm, id: Date.now() }]); try { await db.update("shoots", { shared_links: updated }, `id=eq.${shoot.id}`); setShoot({ ...shoot, shared_links: updated }); setForm(f => ({ ...f, shared_links: updated })); setShowAddLink(false); setLinkForm({ label: "", url: "", type: "drive" }); } catch (e) { alert(e.message); } };
+  const handleRemoveLink = async (id) => { if (!canEditShoot) return; const updated = JSON.stringify(links.filter(l => l.id !== id)); try { await db.update("shoots", { shared_links: updated }, `id=eq.${shoot.id}`); setShoot({ ...shoot, shared_links: updated }); setForm(f => ({ ...f, shared_links: updated })); } catch (e) { alert(e.message); } };
   const handleStatusChange = async (pId, val) => { try { await db.update("shoot_participants", { attendance_status: val }, `id=eq.${pId}`); setParticipants(prev => prev.map(p => p.id === pId ? { ...p, attendance_status: val } : p)); } catch (e) { alert(e.message); } };
-  const handleAddP = async () => { if (!addUserId) return; try { const np = await db.insert("shoot_participants", { shoot_id: shoot.id, user_id: addUserId, role_on_shoot: addRole || "Crew", attendance_status: "open" }); setParticipants(prev => [...prev, np]); setShowAddP(false); setAddUserId(""); setAddRole(""); } catch (e) { alert(e.message); } };
-  const handleRemoveP = async (pId) => { try { await db.remove("shoot_participants", `id=eq.${pId}`); setParticipants(prev => prev.filter(p => p.id !== pId)); } catch (e) { alert(e.message); } };
+  const handleAddP = async () => { if (!addUserId || !canEditShoot) return; try { const np = await db.insert("shoot_participants", { shoot_id: shoot.id, user_id: addUserId, role_on_shoot: addRole || "Crew", attendance_status: "open" }); setParticipants(prev => [...prev, np]); setShowAddP(false); setAddUserId(""); setAddRole(""); } catch (e) { alert(e.message); } };
+  const handleRemoveP = async (pId) => { if (!canEditShoot) return; try { await db.remove("shoot_participants", `id=eq.${pId}`); setParticipants(prev => prev.filter(p => p.id !== pId)); } catch (e) { alert(e.message); } };
   // next part/scene/shot numbers
   const nextPartNum = () => { const nums = shots.map(s => parseInt(s.part_num)||1); return shots.length ? Math.max(...nums) : 1; };
   const nextSceneNum = (part) => { const nums = shots.filter(s => s.part_num===part).map(s => parseInt(s.scene_num)||1); return nums.length ? Math.max(...nums) : 1; };
@@ -1251,7 +1430,11 @@ function MyEquipmentPage({ user, userEquipment, setUserEquipment }) {
     } catch (e) { alert(e.message); }
     setSaving(false);
   };
-  const handleDelete = async (id) => { if (!confirm("Löschen?")) return; try { await db.remove("user_equipment", `id=eq.${id}`); setUserEquipment(prev => prev.filter(e => e.id !== id)); } catch (e) { alert(e.message); } };
+  const handleDelete = async (id) => {
+    const eq = userEquipment.find(e => e.id === id);
+    if (!eq || eq.user_id !== user.id) { alert("Du kannst nur dein eigenes Equipment löschen."); return; }
+    if (!confirm("Equipment löschen?")) return;
+    try { await db.remove("user_equipment", `id=eq.${id}`); setUserEquipment(prev => prev.filter(e => e.id !== id)); } catch (e) { alert(e.message); } };
 
   const byCategory = userEquipment.reduce((acc, e) => { const cat = e.category || "Sonstiges"; if (!acc[cat]) acc[cat] = []; acc[cat].push(e); return acc; }, {});
 
@@ -1369,9 +1552,11 @@ function ClientsPage({ user }) {
   const openNew = () => { setEditClient(null); setForm({ company: "", contact_name: "", email: "", phone: "", website: "", address: "", notes: "" }); setShowModal(true); };
   const openEdit = (c) => { setEditClient(c); setForm({ ...c }); setShowModal(true); };
   const handleSave = async () => {
-    if (!form.company) return;
+    const clientErr = V.check([["Firma", V.text(form.company, 100), "Firmenname ist Pflicht (max. 100 Zeichen)"]]);
+    if (clientErr) { alert(clientErr); return; }
+    const rlErr = RL.form("clients"); if (rlErr) { alert(rlErr); return; }
     setSaving(true);
-    try { if (editClient) { await db.update("clients", form, `id=eq.${editClient.id}`); setClients(prev => prev.map(c => c.id === editClient.id ? { ...c, ...form } : c)); } else { const nc = await db.insert("clients", form); setClients(prev => [...prev, nc]); } setShowModal(false); } catch (e) { alert(e.message); }
+    try { if (editClient) { await db.update("clients", sanitizeObj(form), `id=eq.${editClient.id}`); setClients(prev => prev.map(c => c.id === editClient.id ? { ...c, ...form } : c)); } else { const nc = await db.insert("clients", sanitizeObj(form)); setClients(prev => [...prev, nc]); } setShowModal(false); } catch (e) { alert(e.message); }
     setSaving(false);
   };
   const handleDelete = async (id) => { if (!confirm("Löschen?")) return; try { await db.remove("clients", `id=eq.${id}`); setClients(prev => prev.filter(c => c.id !== id)); } catch (e) { alert(e.message); } };
@@ -1431,9 +1616,10 @@ function ActorsPage({ user }) {
   const openNew = () => { setEditActor(null); setForm({ name: "", email: "", phone: "", instagram: "", tiktok: "", website: "", genre: "", notes: "" }); setShowModal(true); };
   const openEdit = (a) => { setEditActor(a); setForm({ ...a }); setShowModal(true); };
   const handleSave = async () => {
-    if (!form.name) return;
+    const actorErr = V.check([["Name", V.name(form.name), "Name ist Pflicht (2–80 Zeichen)"]]);
+    if (actorErr) { alert(actorErr); return; }
     setSaving(true);
-    try { if (editActor) { await db.update("actors", form, `id=eq.${editActor.id}`); setActors(prev => prev.map(a => a.id === editActor.id ? { ...a, ...form } : a)); } else { const na = await db.insert("actors", form); setActors(prev => [...prev, na]); } setShowModal(false); } catch (e) { alert(e.message); }
+    try { if (editActor) { await db.update("actors", sanitizeObj(form), `id=eq.${editActor.id}`); setActors(prev => prev.map(a => a.id === editActor.id ? { ...a, ...form } : a)); } else { const na = await db.insert("actors", sanitizeObj(form)); setActors(prev => [...prev, na]); } setShowModal(false); } catch (e) { alert(e.message); }
     setSaving(false);
   };
   const handleDelete = async (id) => { if (!confirm("Löschen?")) return; try { await db.remove("actors", `id=eq.${id}`); setActors(prev => prev.filter(a => a.id !== id)); } catch (e) { alert(e.message); } };
@@ -1491,78 +1677,234 @@ function ActorsPage({ user }) {
 // USERS / APPROVAL
 // ============================================================
 function UsersPage({ users, setUsers, user: currentUser }) {
-  const [showModal, setShowModal] = useState(false); const [form, setForm] = useState({ name: "", email: "", role: "crew", is_admin: false }); const [saving, setSaving] = useState(false);
-  const [tempPw] = useState(() => Math.random().toString(36).slice(-10));
-  const pending = users.filter(u => !u.is_approved);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", role: "crew", is_admin: false });
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [tempPw] = useState(() => Math.random().toString(36).slice(-8) + "Aa1!");
+
+  const pending  = users.filter(u => !u.is_approved);
   const approved = users.filter(u => u.is_approved);
 
   const handleApprove = async (u) => {
-    try { await db.update("users", { is_approved: true }, `id=eq.${u.id}`); setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_approved: true } : x)); } catch (e) { alert(e.message); }
+    try {
+      await db.update("users", { is_approved: true }, `id=eq.${u.id}`);
+      setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_approved: true } : x));
+    } catch(e) { alert(e.message); }
   };
+
   const handleReject = async (u) => {
-    if (!confirm(`${u.name} ablehnen und löschen?`)) return;
-    try { await db.remove("users", `id=eq.${u.id}`); setUsers(prev => prev.filter(x => x.id !== u.id)); } catch (e) { alert(e.message); }
+    if (!confirm(`${u.name} ablehnen und Profil löschen?`)) return;
+    try {
+      await db.remove("users", `id=eq.${u.id}`);
+      setUsers(prev => prev.filter(x => x.id !== u.id));
+    } catch(e) { alert(e.message); }
   };
-  const handleToggleAdmin = async (u) => { try { await db.update("users", { is_admin: !u.is_admin }, `id=eq.${u.id}`); setUsers(prev => prev.map(x => x.id === u.id ? { ...x, is_admin: !u.is_admin } : x)); } catch (e) { alert(e.message); } };
+
+  const startEdit = (u) => {
+    setEditingId(u.id);
+    setEditForm({ role: u.role || "crew", is_admin: !!u.is_admin });
+  };
+
+  const handleSavePermissions = async (uid) => {
+    try {
+      await db.update("users", { role: editForm.role, is_admin: editForm.is_admin }, `id=eq.${uid}`);
+      setUsers(prev => prev.map(x => x.id === uid ? { ...x, role: editForm.role, is_admin: editForm.is_admin } : x));
+      setEditingId(null);
+    } catch(e) { alert(e.message); }
+  };
+
   const handleCreate = async () => {
-    if (!form.name || !form.email) return;
+    const err = V.check([
+      ["Name",   V.name(form.name),   "Name muss 2–80 Zeichen haben"],
+      ["E-Mail", V.email(form.email), "Ungültige E-Mail-Adresse"],
+    ]);
+    if (err) { alert(err); return; }
     setSaving(true);
-    try { const u = await db.insert("users", { name: form.name, email: form.email, role: form.role, is_admin: form.is_admin, is_approved: true, must_change_password: true }); setUsers(prev => [...prev, u]); setShowModal(false); alert(`Profil erstellt!\nIn Supabase → Authentication → Add User:\nE-Mail: ${form.email}\nPasswort: ${tempPw}`); } catch (e) { alert("Fehler: " + e.message); }
+    try {
+      const u = await db.insert("users", sanitizeObj({
+        name: form.name.trim(), email: form.email.trim().toLowerCase(),
+        role: form.role, is_admin: form.is_admin,
+        is_approved: true, must_change_password: true
+      }));
+      setUsers(prev => [...prev, u]);
+      setShowModal(false);
+      setForm({ name: "", email: "", role: "crew", is_admin: false });
+      alert(`✅ Profil erstellt!\n\nNun in Supabase Dashboard:\nAuthentication → Users → "Add User"\n\nE-Mail: ${form.email}\nPasswort: ${tempPw}\n\nDer User muss das Passwort beim ersten Login ändern.`);
+    } catch(e) { alert("Fehler: " + e.message); }
     setSaving(false);
   };
 
+  const RoleButton = ({ value, label, desc, current, onChange }) => (
+    <button onClick={() => onChange(value)} style={{
+      flex:1, padding:"10px 12px", borderRadius:10, border:"none", cursor:"pointer",
+      fontFamily:"inherit", textAlign:"left", transition:"all 0.12s",
+      background: current===value ? C.accentDim : C.surfaceHi,
+      outline: current===value ? `2px solid ${C.accent}` : `1px solid ${C.border}`,
+    }}>
+      <div style={{ fontSize:13, fontWeight:600, color: current===value ? C.accent : C.textMid }}>{label}</div>
+      <div style={{ fontSize:10, color:C.textDim, marginTop:2 }}>{desc}</div>
+    </button>
+  );
+
+  const AdminToggle = ({ value, onChange }) => (
+    <div onClick={() => onChange(!value)} style={{
+      display:"flex", alignItems:"center", justifyContent:"space-between",
+      padding:"12px 14px", borderRadius:10, cursor:"pointer", transition:"all 0.15s",
+      background: value ? "rgba(10,132,255,0.08)" : C.surfaceHi,
+      border:`1px solid ${value ? C.accent+"44" : C.border}`
+    }}>
+      <div>
+        <div style={{ fontSize:13, fontWeight:600, color:C.text }}>Admin-Rechte</div>
+        <div style={{ fontSize:11, color:C.textDim, marginTop:2 }}>Vollzugriff auf alle Shoots, Benutzerverwaltung und sämtliche Daten</div>
+      </div>
+      <div style={{ width:46, height:26, borderRadius:13, flexShrink:0, marginLeft:12,
+        background: value ? C.accent : C.surface, border:`1px solid ${value ? C.accent : C.border}`,
+        position:"relative", transition:"background 0.2s" }}>
+        <div style={{ position:"absolute", top:3, left: value ? 22 : 3, width:18, height:18,
+          borderRadius:"50%", background:"#fff", transition:"left 0.2s", boxShadow:"0 1px 4px rgba(0,0,0,0.3)" }} />
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}><div><div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: C.text, marginBottom: 3 }}>Benutzer</div><div style={{ fontSize: 12, color: C.textDim }}>{approved.length} aktiv · {pending.length} ausstehend</div></div><button style={S.btn("primary")} onClick={() => setShowModal(true)}>＋ Manuell anlegen</button></div>
-
-      {pending.length > 0 && (<>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.amber, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>⏳ Ausstehende Anfragen ({pending.length})</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-          {pending.map(u => (
-            <div key={u.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, border: "1px solid rgba(245,158,11,0.3)", background: "rgba(245,158,11,0.05)" }}>
-              <div style={S.avatar(36)}>{u.name?.[0]}</div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{u.name}</div><div style={{ fontSize: 11, color: C.textDim }}>{u.email} · <span style={S.roleBadge(u.role)}>{ROLE_CONFIG[u.role]?.label || u.role}</span></div></div>
-              <button style={S.btn("primary")} onClick={() => handleApprove(u)}>✓ Freigeben</button>
-              <button style={S.btn("danger")} onClick={() => handleReject(u)}>✕ Ablehnen</button>
-            </div>
-          ))}
+      {/* Header */}
+      <div style={{ marginBottom:24, display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
+        <div>
+          <div style={{ fontSize:22, fontWeight:700, letterSpacing:"-0.02em", color:C.text, marginBottom:3 }}>Benutzerverwaltung</div>
+          <div style={{ fontSize:12, color:C.textDim }}>{approved.length} aktiv · {pending.length} ausstehend</div>
         </div>
-      </>)}
-
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.textDim, marginBottom: 10 }}>Aktive Benutzer</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {approved.map(u => (
-          <div key={u.id} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={S.avatar(36)}>{u.name?.[0]}</div>
-            <div style={{ flex: 1, minWidth: 150 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>{u.name}<span style={S.roleBadge(u.role || (u.is_admin ? "admin" : "crew"))}>{ROLE_CONFIG[u.role]?.label || (u.is_admin ? "Admin" : "Crew")}</span>{u.must_change_password && <span style={S.tag("#EF4444")}>⚠ PW ändern</span>}</div>
-              <div style={{ fontSize: 11, color: C.textDim }}>{u.email}</div>
-            </div>
-            {u.id !== currentUser.id && <button style={S.btn("outline")} onClick={() => handleToggleAdmin(u)}>{u.is_admin ? "→ Crew" : "→ Admin"}</button>}
-          </div>
-        ))}
+        <button style={S.btn("primary")} onClick={() => setShowModal(true)}>＋ Benutzer anlegen</button>
       </div>
 
-      {showModal && (<div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}><div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: "24px 24px", width: "100%", maxWidth: 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.35)" }}>
-        <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 18, letterSpacing: "-0.01em", color: C.text }}>Benutzer manuell anlegen</div>
-        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Name</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></div>
-        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>E-Mail</label><input style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></div>
-        <div style={{ marginBottom: 12 }}><label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Rolle</label><select style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", cursor: "pointer", fontFamily: "inherit" }} value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}><option value="crew">Crew</option><option value="actor">Schauspieler</option><option value="admin">Admin</option></select></div>
-        <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}><input type="checkbox" id="ia" checked={form.is_admin} onChange={e=>setForm(f=>({...f,is_admin:e.target.checked}))}/><label htmlFor="ia" style={{ fontSize: 13, color: C.textMid, cursor: "pointer" }}>Admin-Rechte</label></div>
-        <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, padding: "10px 14px", marginBottom: 18, background: "rgba(99,102,241,0.06)" }}>
-          <div style={{ fontSize: 11, color: C.textDim, marginBottom: 4 }}>Temporäres Passwort:</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.accent, letterSpacing: "1px" }}>{tempPw}</div>
-          <div style={{ fontSize: 11, color: C.textDim, marginTop: 4 }}>In Supabase → Authentication → Add User eingeben.</div>
+      {/* Pending */}
+      {pending.length > 0 && (
+        <div style={{ marginBottom:28 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.amber, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:12 }}>
+            ⏳ Freigabe ausstehend ({pending.length})
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {pending.map(u => (
+              <div key={u.id} style={{ background:"rgba(255,159,10,0.06)", border:"1px solid rgba(255,159,10,0.25)", borderRadius:14, padding:"14px 18px", display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+                <div style={{ ...S.avatar(38), background:"rgba(255,159,10,0.15)", color:C.amber }}>{(u.name||"?")[0].toUpperCase()}</div>
+                <div style={{ flex:1, minWidth:140 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{u.name}</div>
+                  <div style={{ fontSize:11, color:C.textDim, marginTop:2 }}>{u.email}</div>
+                  <div style={{ marginTop:4 }}><span style={S.roleBadge(u.role)}>{ROLE_CONFIG[u.role]?.label || u.role}</span></div>
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <button style={S.btn("primary")} onClick={() => handleApprove(u)}>✓ Freigeben</button>
+                  <button style={S.btn("danger")} onClick={() => handleReject(u)}>✕ Ablehnen</button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}><button style={S.btn("primary")} onClick={handleCreate} disabled={saving}>{saving?"...":"Erstellen"}</button><button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button></div>
-      </div></div>)}
+      )}
+
+      {/* Active users */}
+      <div>
+        <div style={{ fontSize:11, fontWeight:700, color:C.textDim, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:12 }}>
+          Aktive Benutzer ({approved.length})
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {approved.map(u => {
+            const isEditing = editingId === u.id;
+            const isSelf = u.id === currentUser.id;
+            return (
+              <div key={u.id} style={{ background:C.surface, border:`1px solid ${isEditing ? C.accent+"55" : C.border}`, borderRadius:14, padding:"16px 18px", boxShadow:C.shadow, transition:"border-color 0.15s" }}>
+                {/* Row */}
+                <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+                  <div style={{ ...S.avatar(38), background: u.is_admin ? C.accentDim : C.surfaceHi, color: u.is_admin ? C.accent : C.textMid }}>
+                    {(u.name||"?")[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex:1, minWidth:140 }}>
+                    <div style={{ fontSize:13, fontWeight:600, color:C.text, display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                      {u.name}
+                      {u.is_admin && <span style={{ fontSize:10, fontWeight:700, color:C.accent, background:C.accentDim, padding:"2px 8px", borderRadius:20 }}>ADMIN</span>}
+                      {isSelf && <span style={{ fontSize:10, color:C.textDim, background:C.surfaceHi, padding:"2px 7px", borderRadius:20 }}>Du</span>}
+                      {u.must_change_password && <span style={{ fontSize:10, color:C.danger, background:C.dangerDim, padding:"2px 7px", borderRadius:20 }}>⚠ PW ändern</span>}
+                      {!u.terms_accepted_at && <span style={{ fontSize:10, color:C.amber, background:"rgba(255,159,10,0.12)", padding:"2px 7px", borderRadius:20 }}>AGB ausstehend</span>}
+                    </div>
+                    <div style={{ fontSize:11, color:C.textDim, marginTop:2 }}>{u.email} · <span style={S.roleBadge(u.role||"crew")}>{ROLE_CONFIG[u.role]?.label||"Crew"}</span></div>
+                  </div>
+                  {!isSelf && !isEditing && (
+                    <button style={S.btn("outline")} onClick={() => startEdit(u)}>✏ Berechtigungen</button>
+                  )}
+                  {isEditing && (
+                    <div style={{ display:"flex", gap:6 }}>
+                      <button style={S.btn("primary")} onClick={() => handleSavePermissions(u.id)}>✓ Speichern</button>
+                      <button style={S.btn("ghost")} onClick={() => setEditingId(null)}>Abbrechen</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Inline permission editor */}
+                {isEditing && (
+                  <div style={{ marginTop:14, padding:"16px", background:C.surfaceHi, borderRadius:12, border:`1px solid ${C.border}` }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:C.textDim, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:12 }}>
+                      Berechtigungen — {u.name}
+                    </div>
+                    <div style={{ marginBottom:12 }}>
+                      <div style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:8 }}>Rolle</div>
+                      <div style={{ display:"flex", gap:8 }}>
+                        <RoleButton value="crew"  label="Crew"        desc="Zugewiesene Shoots & Shotlisten" current={editForm.role} onChange={r => setEditForm(f => ({...f, role:r}))} />
+                        <RoleButton value="actor" label="Schauspieler" desc="Eigene Auftritte verwalten"      current={editForm.role} onChange={r => setEditForm(f => ({...f, role:r}))} />
+                      </div>
+                    </div>
+                    <AdminToggle value={editForm.is_admin} onChange={v => setEditForm(f => ({...f, is_admin:v}))} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Create user modal */}
+      {showModal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.55)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, padding:20, backdropFilter:"blur(8px)", WebkitBackdropFilter:"blur(8px)" }}>
+          <div style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:18, padding:"24px", width:"100%", maxWidth:480, boxShadow:"0 20px 60px rgba(0,0,0,0.4)" }}>
+            <div style={{ fontSize:17, fontWeight:700, marginBottom:18, color:C.text }}>Benutzer manuell anlegen</div>
+            <div style={{ marginBottom:12 }}>
+              <label style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:5, display:"block" }}>Name</label>
+              <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" }}
+                value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Vorname Nachname" />
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:5, display:"block" }}>E-Mail</label>
+              <input style={{ background:C.surfaceHi, border:`1px solid ${C.border}`, borderRadius:10, padding:"9px 13px", color:C.text, fontSize:13, width:"100%", boxSizing:"border-box", outline:"none", fontFamily:"inherit" }}
+                type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="user@example.com" />
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <div style={{ fontSize:11, fontWeight:600, color:C.textMid, marginBottom:8 }}>Rolle</div>
+              <div style={{ display:"flex", gap:8 }}>
+                <RoleButton value="crew"  label="Crew"        desc="Standard-Mitglied"  current={form.role} onChange={r=>setForm(f=>({...f,role:r}))} />
+                <RoleButton value="actor" label="Schauspieler" desc="Darsteller-Account" current={form.role} onChange={r=>setForm(f=>({...f,role:r}))} />
+              </div>
+            </div>
+            <div style={{ marginBottom:18 }}>
+              <AdminToggle value={form.is_admin} onChange={v=>setForm(f=>({...f,is_admin:v}))} />
+            </div>
+            <div style={{ padding:"12px 14px", marginBottom:18, background:"rgba(10,132,255,0.07)", borderRadius:10, border:`1px solid ${C.accent}22` }}>
+              <div style={{ fontSize:11, color:C.textDim, marginBottom:4 }}>Temporäres Passwort für Supabase Auth:</div>
+              <div style={{ fontSize:15, fontWeight:700, color:C.accent, letterSpacing:"1px", fontFamily:"monospace" }}>{tempPw}</div>
+              <div style={{ fontSize:11, color:C.textDim, marginTop:4 }}>Supabase → Authentication → Add User → dieses Passwort eingeben. Der User muss es beim ersten Login ändern.</div>
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button style={S.btn("primary")} onClick={handleCreate} disabled={saving}>{saving?"Erstellt...":"Erstellen"}</button>
+              <button style={S.btn("ghost")} onClick={()=>setShowModal(false)}>Abbrechen</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ============================================================
-// MAIN APP
-// ============================================================
+
 function NetworkPage({ user, users, setShoots, shoots, participants, setParticipants }) {
   const [networks, setNetworks] = useState([]);
   const [allMembers, setAllMembers] = useState([]);       // alle network_members rows
@@ -1640,9 +1982,12 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
 
   const handleEditNetwork = async () => {
     if (!showEditNetModal || !editNetForm.name) return;
+    if (showEditNetModal.created_by !== user.id && !user.is_admin) { alert("Nur der Ersteller oder ein Admin kann dieses Netzwerk bearbeiten."); return; }
+    const netErr = V.check([["Name", V.text(editNetForm.name, 80), "Name ist Pflicht (max. 80 Zeichen)"]]);
+    if (netErr) { alert(netErr); return; }
     setSaving(true);
     try {
-      await db.update("networks", { name: editNetForm.name, description: editNetForm.description, is_public: editNetForm.is_public }, `id=eq.${showEditNetModal.id}`);
+      await db.update("networks", sanitizeObj({ name: editNetForm.name, description: editNetForm.description, is_public: editNetForm.is_public }), `id=eq.${showEditNetModal.id}`);
       setNetworks(p => p.map(n => n.id === showEditNetModal.id ? { ...n, ...editNetForm } : n));
       setShowEditNetModal(null);
     } catch(e) { alert(e.message); }
@@ -1650,6 +1995,7 @@ function NetworkPage({ user, users, setShoots, shoots, participants, setParticip
   };
 
   const handleDeleteNetwork = async (nw) => {
+    if (nw.created_by !== user.id && !user.is_admin) { alert("Nur der Ersteller oder ein Admin kann dieses Netzwerk löschen."); return; }
     if (!confirm(`Netzwerk "${nw.name}" wirklich löschen? Alle Mitgliedschaften werden entfernt.`)) return;
     try {
       await db.remove("network_members", `network_id=eq.${nw.id}`);
@@ -2126,8 +2472,7 @@ function ProfilePage({ user, setUser }) {
 
   const handleSavePw = async () => {
     setPwErr(""); setPwMsg("");
-    if (pwForm.newPw.length < 8) { setPwErr("Mindestens 8 Zeichen"); return; }
-    if (pwForm.newPw !== pwForm.confirm) { setPwErr("Passwörter stimmen nicht überein"); return; }
+    const ppwErr = V.check([["Passwort", V.password(pwForm.newPw), "Passwort muss 8–128 Zeichen haben"], ["Wiederholung", pwForm.newPw===pwForm.confirm, "Passwörter stimmen nicht überein"]]); if (ppwErr) { setPwErr(ppwErr); return; }
     setSaving(true);
     try {
       // Re-auth with current password first
@@ -2246,6 +2591,8 @@ function MarketplacePage({ user, users, userEquipment }) {
   };
 
   const handleDeleteListing = async (id) => {
+    const listing = listings.find(l => l.id === id);
+    if (!listing || (listing.owner_id !== user.id && !user.is_admin)) { alert("Du kannst nur deine eigenen Inserate löschen."); return; }
     if (!confirm("Inserat löschen?")) return;
     try {
       await db.remove("equipment_listings", `id=eq.${id}`);
@@ -2475,9 +2822,104 @@ function MarketplacePage({ user, users, userEquipment }) {
 // ============================================================
 // NETWORK PAGE — vollständig neu mit allen Fixes
 // ============================================================
+// ── Password Reset Page (shown when user clicks email reset link) ─────────────
+function ResetPasswordPage({ token, onDone }) {
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const handleReset = async () => {
+    const err = V.check([
+      ["Passwort",     V.password(pw),  "Passwort muss 8–128 Zeichen haben"],
+      ["Wiederholung", pw === pw2,      "Passwörter stimmen nicht überein"],
+    ]);
+    if (err) { setError(err); return; }
+    setSaving(true); setError("");
+    try {
+      // Use the recovery token to authenticate this request
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (!r.ok) {
+        const d = await r.json();
+        throw new Error(d.message || d.error_description || "Fehler beim Zurücksetzen");
+      }
+      setSuccess(true);
+      setTimeout(() => onDone(), 2000);
+    } catch(e) { setError(e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ width: "100%", maxWidth: 400 }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔑</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.text, letterSpacing: "-0.02em" }}>Neues Passwort</div>
+          <div style={{ fontSize: 13, color: C.textDim, marginTop: 6 }}>Bitte wähle ein neues Passwort</div>
+        </div>
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 18, padding: 28, boxShadow: C.shadow }}>
+          {success ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>✅</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: C.green }}>Passwort erfolgreich geändert!</div>
+              <div style={{ fontSize: 12, color: C.textDim, marginTop: 8 }}>Du wirst zum Login weitergeleitet...</div>
+            </div>
+          ) : (
+            <>
+              {error && <div style={{ fontSize: 12, color: C.danger, padding: "10px 13px", background: C.dangerDim, borderRadius: 10, marginBottom: 16, borderLeft: `3px solid ${C.danger}` }}>{error}</div>}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Neues Passwort</label>
+                <input
+                  type="password"
+                  style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }}
+                  placeholder="Mindestens 8 Zeichen"
+                  value={pw}
+                  onChange={e => setPw(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleReset()}
+                  autoFocus
+                />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, color: C.textMid, marginBottom: 5, display: "block" }}>Passwort bestätigen</label>
+                <input
+                  type="password"
+                  style={{ background: C.surfaceHi, border: `1px solid ${C.border}`, borderRadius: 10, padding: "9px 13px", color: C.text, fontSize: 13, width: "100%", boxSizing: "border-box", outline: "none", fontFamily: "inherit" }}
+                  placeholder="Passwort wiederholen"
+                  value={pw2}
+                  onChange={e => setPw2(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleReset()}
+                />
+              </div>
+              <button
+                style={{ ...S.btn("primary"), width: "100%", justifyContent: "center" }}
+                onClick={handleReset}
+                disabled={saving}
+              >
+                {saving ? "Wird gespeichert..." : "Passwort speichern"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [sessionRestored, setSessionRestored] = useState(false);
+  const [recoveryToken, setRecoveryToken] = useState(null); // password reset flow
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [page, setPage] = useState("dashboard");
   const [selectedShoot, setSelectedShoot] = useState(null);
   const [shoots, setShoots] = useState([]);
@@ -2496,6 +2938,20 @@ export default function App() {
     link.href = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap";
     document.head.appendChild(link);
 
+    // ── Detect Supabase password-reset link (hash contains access_token + type=recovery)
+    try {
+      const hash = window.location.hash.substring(1); // remove leading #
+      const params = new URLSearchParams(hash);
+      if (params.get("type") === "recovery" && params.get("access_token")) {
+        // Set the recovery token — this triggers the ResetPasswordPage
+        setRecoveryToken(params.get("access_token"));
+        // Clean URL so refreshing doesn't re-trigger
+        window.history.replaceState(null, "", window.location.pathname);
+        setSessionRestored(true);
+        return; // skip normal session restore
+      }
+    } catch(e) {}
+
     try {
       const stored = localStorage.getItem(SESSION_KEY);
       if (stored) {
@@ -2503,6 +2959,7 @@ export default function App() {
         if (token && profile && expiry && Date.now() < expiry) {
           db.setToken(token);
           setUser(profile);
+          if (!profile.terms_accepted_at) setShowTermsModal(true);
         } else {
           localStorage.removeItem(SESSION_KEY);
         }
@@ -2531,6 +2988,7 @@ export default function App() {
       const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 Tage
       localStorage.setItem(SESSION_KEY, JSON.stringify({ token, profile, expiry }));
     } catch(e) {}
+    if (!profile.terms_accepted_at) setShowTermsModal(true);
   };
   const handleLogout = () => { db.clearToken(); setUser(null); setShoots([]); setParticipants([]); setShotlist([]); setSchedule([]); setUsers([]); setClients([]); setUserEquipment([]); setPage("dashboard"); };
 
@@ -2544,8 +3002,15 @@ export default function App() {
   };
 
   if (!sessionRestored) return null; // wait for localStorage restore
+  if (recoveryToken) return <ResetPasswordPage token={recoveryToken} onDone={() => setRecoveryToken(null)} />;
   if (!user) return <AuthPage onLogin={handleLogin} />;
   if (user.must_change_password) return <ChangePasswordPage user={user} onDone={() => setUser(u => ({ ...u, must_change_password: false }))} />;
+  const termsModalEl = showTermsModal ? (
+    <TermsAcceptanceModal user={user} onAccept={() => {
+      setShowTermsModal(false);
+      setUser(u => ({ ...u, terms_accepted_at: new Date().toISOString() }));
+    }} />
+  ) : null;
 
   const myIds = participants.filter(p => p.user_id === user.id).map(p => p.shoot_id);
   const visibleShoots = user.is_admin ? shoots : shoots.filter(s => myIds.includes(s.id) || s.created_by === user.id);
@@ -2588,6 +3053,7 @@ export default function App() {
           .fadeIn { animation: fadeIn 0.2s ease; }
         `}</style>;
       })()}
+      {termsModalEl}
       <Layout page={page} setPage={setPage} user={user} onLogout={handleLogout}>{content}</Layout>
     </>
   );
