@@ -57,6 +57,16 @@ const db = {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/signup`, { method: "POST", headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
     const d = await r.json(); if (!r.ok) throw new Error(d?.error_description || d?.message || "Registrierung fehlgeschlagen"); return d;
   },
+  async refreshToken(refreshToken) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { "apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d?.error_description || d?.message || "Token refresh fehlgeschlagen");
+    return d; // { access_token, refresh_token, expires_in }
+  },
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -420,7 +430,7 @@ function AuthPage({ onLogin }) {
       const profiles = await db.select("users", `email=eq.${encodeURIComponent(email)}`);
       if (!profiles.length) throw new Error("Kein Benutzerprofil gefunden.");
       if (!profiles[0].is_approved) throw new Error("Dein Account wartet noch auf Freigabe durch einen Admin.");
-      onLogin(profiles[0], data.access_token);
+      onLogin(profiles[0], data.access_token, data.refresh_token);
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
@@ -2952,20 +2962,41 @@ export default function App() {
       }
     } catch(e) {}
 
-    try {
-      const stored = localStorage.getItem(SESSION_KEY);
-      if (stored) {
-        const { token, profile, expiry } = JSON.parse(stored);
-        if (token && profile && expiry && Date.now() < expiry) {
-          db.setToken(token);
-          setUser(profile);
-          if (!profile.terms_accepted_at) setShowTermsModal(true);
-        } else {
-          localStorage.removeItem(SESSION_KEY);
+    (async () => {
+      try {
+        const stored = localStorage.getItem(SESSION_KEY);
+        if (stored) {
+          const { token, refreshToken, profile, expiry } = JSON.parse(stored);
+          if (token && profile && expiry && Date.now() < expiry) {
+            // Access token expires after 1h — refresh if older than 50 minutes
+            // We store tokenIssuedAt to track this; fallback: always refresh
+            try {
+              if (refreshToken) {
+                const fresh = await db.refreshToken(refreshToken);
+                db.setToken(fresh.access_token);
+                const newExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+                localStorage.setItem(SESSION_KEY, JSON.stringify({
+                  token: fresh.access_token,
+                  refreshToken: fresh.refresh_token,
+                  profile,
+                  expiry: newExpiry
+                }));
+              } else {
+                db.setToken(token);
+              }
+            } catch(refreshErr) {
+              // Refresh failed (token revoked etc.) — use stored token, may fail
+              db.setToken(token);
+            }
+            setUser(profile);
+            if (!profile.terms_accepted_at) setShowTermsModal(true);
+          } else {
+            localStorage.removeItem(SESSION_KEY);
+          }
         }
-      }
-    } catch(e) {}
-    setSessionRestored(true);
+      } catch(e) {}
+      setSessionRestored(true);
+    })();
   }, []);
 
   const loadAll = useCallback(async () => {
@@ -2981,12 +3012,35 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const handleLogin = (profile, token) => {
+  // Auto-refresh JWT every 50 minutes (Supabase tokens expire after 60 min)
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(async () => {
+      try {
+        const stored = localStorage.getItem(SESSION_KEY);
+        if (!stored) return;
+        const { refreshToken, profile, expiry } = JSON.parse(stored);
+        if (!refreshToken) return;
+        const fresh = await db.refreshToken(refreshToken);
+        db.setToken(fresh.access_token);
+        const newExpiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          token: fresh.access_token,
+          refreshToken: fresh.refresh_token,
+          profile,
+          expiry: newExpiry
+        }));
+      } catch(e) { console.warn("Token refresh failed:", e.message); }
+    }, 50 * 60 * 1000); // 50 minutes
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const handleLogin = (profile, token, refreshToken) => {
     db.setToken(token);
     setUser(profile);
     try {
       const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 Tage
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ token, profile, expiry }));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ token, refreshToken, profile, expiry }));
     } catch(e) {}
     if (!profile.terms_accepted_at) setShowTermsModal(true);
   };
